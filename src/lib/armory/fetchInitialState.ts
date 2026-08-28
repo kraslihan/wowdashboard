@@ -1,35 +1,17 @@
+import { ARMORY_BASE_URL, buildArmoryCharacterPath, type ArmoryCharacterRef } from "./armoryUrl";
 import { ArmoryFetchError, ArmoryParseError } from "./errors";
 import type { RawArmoryInitialState } from "./types";
-
-const ARMORY_BASE_URL = "https://worldofwarcraft.blizzard.com";
-const ARMORY_LOCALE = process.env.WOW_ARMORY_LOCALE ?? "en-gb";
-const ARMORY_EXPANSION = process.env.WOW_ARMORY_EXPANSION ?? "worldsoul";
 
 const INITIAL_STATE_MARKER = "var characterProfileInitialState = ";
 
 export type ArmoryTab = "pvp";
 
-export interface ArmoryCharacterRef {
-  region: string;
-  realmSlug: string;
-  characterName: string;
+export interface ArmoryCharacterTabRef extends ArmoryCharacterRef {
   tab?: ArmoryTab;
 }
 
-function buildArmoryUrl({ region, realmSlug, characterName, tab }: ArmoryCharacterRef): string {
-  const path = [
-    ARMORY_LOCALE,
-    ARMORY_EXPANSION,
-    region,
-    "armory",
-    "character",
-    realmSlug,
-    characterName.toLowerCase(),
-    tab,
-  ]
-    .filter(Boolean)
-    .join("/");
-
+function buildArmoryUrl(ref: ArmoryCharacterTabRef): string {
+  const path = [buildArmoryCharacterPath(ref), ref.tab].filter(Boolean).join("/");
   return `${ARMORY_BASE_URL}/${path}`;
 }
 
@@ -94,7 +76,7 @@ function extractInitialState(html: string): RawArmoryInitialState {
   }
 }
 
-export async function fetchArmoryInitialState(ref: ArmoryCharacterRef): Promise<RawArmoryInitialState> {
+export async function fetchArmoryInitialState(ref: ArmoryCharacterTabRef): Promise<RawArmoryInitialState> {
   const url = buildArmoryUrl(ref);
 
   const response = await fetch(url, {

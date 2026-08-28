@@ -94,3 +94,48 @@ export interface RawArmoryInitialState {
   // instead of nesting it under `character.pvp` like the main profile page does.
   pvp?: ArmoryPvp;
 }
+
+// collections/mounts.json
+export interface ArmoryMountQuality {
+  id: number;
+  name: string;
+  enum: string;
+  slug: string;
+}
+
+export interface ArmoryMount {
+  id: number;
+  name: string;
+  quality: ArmoryMountQuality;
+  render: { url: string };
+  collected: boolean;
+}
+
+export interface ArmoryMountsResponse {
+  mounts: ArmoryMount[];
+  mountsCollected: number;
+}
+
+// reputation.json
+export interface ArmoryReputationStandingType {
+  id?: number;
+  name: string;
+  enum: string;
+  slug: string;
+}
+
+export interface ArmoryReputationNode {
+  id: string;
+  name: string;
+  max: boolean;
+  maxValue?: number;
+  standing?: string;
+  standingType?: ArmoryReputationStandingType;
+  value?: number;
+  reputations?: ArmoryReputationNode[];
+}
+
+export interface ArmoryReputationResponse {
+  region: string;
+  reputations: ArmoryReputationNode[];
+}
