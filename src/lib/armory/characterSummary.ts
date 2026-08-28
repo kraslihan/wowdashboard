@@ -1,5 +1,12 @@
 import { ArmoryParseError } from "./errors";
-import type { ArmoryFaction, ArmoryPvp, ArmoryRealm, RawArmoryCharacter, RawArmoryInitialState } from "./types";
+import type {
+  ArmoryAchievementCategory,
+  ArmoryFaction,
+  ArmoryPvp,
+  ArmoryRealm,
+  RawArmoryCharacter,
+  RawArmoryInitialState,
+} from "./types";
 
 // Only the paths requested for the "character" BFF service:
 // achievement, averageItemLevel, class.name, faction, guild.name, level,
@@ -45,4 +52,15 @@ export function pickPvpSummary(initialState: RawArmoryInitialState): ArmoryPvp {
     throw new ArmoryParseError("Character has no pvp data in armory response");
   }
   return pvp;
+}
+
+// The "achievements" BFF service: the achievementIndex.categories array.
+// `achievementIndex` itself is not an array — it's `{ categories: [...] }` —
+// so we return that inner array directly.
+export function pickAchievementCategories(initialState: RawArmoryInitialState): ArmoryAchievementCategory[] {
+  const categories = initialState.achievementIndex?.categories;
+  if (!categories) {
+    throw new ArmoryParseError("Character has no achievementIndex data in armory response");
+  }
+  return categories;
 }

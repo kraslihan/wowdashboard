@@ -4,7 +4,7 @@ import type { RawArmoryInitialState } from "./types";
 
 const INITIAL_STATE_MARKER = "var characterProfileInitialState = ";
 
-export type ArmoryTab = "pvp";
+export type ArmoryTab = "pvp" | "achievements";
 
 export interface ArmoryCharacterTabRef extends ArmoryCharacterRef {
   tab?: ArmoryTab;

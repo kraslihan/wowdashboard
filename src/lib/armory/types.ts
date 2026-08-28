@@ -93,6 +93,23 @@ export interface RawArmoryInitialState {
   // On the /pvp sub-page, Blizzard puts `pvp` as a sibling of `character`
   // instead of nesting it under `character.pvp` like the main profile page does.
   pvp?: ArmoryPvp;
+  // Present as a sibling of `character` on the /achievements sub-page.
+  achievementIndex?: ArmoryAchievementIndex;
+}
+
+// /achievements sub-page: achievementIndex.categories
+export interface ArmoryAchievementCategory {
+  count: number;
+  name: string;
+  points?: number;
+  slug: string;
+  total?: number;
+  totalPoints?: number;
+  url: string;
+}
+
+export interface ArmoryAchievementIndex {
+  categories: ArmoryAchievementCategory[];
 }
 
 // collections/mounts.json
