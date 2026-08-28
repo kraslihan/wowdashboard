@@ -1,0 +1,11 @@
+.status {
+  padding: 24px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.error {
+  padding: 24px;
+  color: var(--status-critical);
+  font-size: 14px;
+}

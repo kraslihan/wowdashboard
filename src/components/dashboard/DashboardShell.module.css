@@ -1,0 +1,12 @@
+.shell {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.panels {
+  min-height: 240px;
+}
