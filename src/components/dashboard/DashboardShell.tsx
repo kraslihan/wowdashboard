@@ -8,12 +8,14 @@ import { AsyncBoundary } from "./AsyncBoundary";
 import { CharacterHeader } from "./CharacterHeader";
 import { Tabs, type TabItem } from "./Tabs";
 import styles from "./DashboardShell.module.css";
+import { OverviewTab } from "./tabs/OverviewTab";
 import { PvpTab } from "./tabs/PvpTab";
 import { AchievementsTab } from "./tabs/AchievementsTab";
 import { MountsTab } from "./tabs/MountsTab";
 import { ReputationTab } from "./tabs/ReputationTab";
 
 const TABS: TabItem[] = [
+  { id: "overview", label: "Overview", href: "/overview" },
   { id: "pvp", label: "PvP Status", href: "/pvp" },
   { id: "achievements", label: "Achievements", href: "/achievements" },
   { id: "mounts", label: "Mounts", href: "/mounts" },
@@ -37,6 +39,14 @@ export function DashboardShell({ characterRef, activeTab }: DashboardShellProps)
       <Tabs tabs={TABS} activeId={activeTab} />
 
       <div className={styles.panels}>
+        {activeTab === "overview" && (
+          <div role="tabpanel" id="panel-overview" aria-labelledby="tab-overview">
+            <AsyncBoundary loading={character.loading} error={character.error} data={character.data}>
+              {(data) => <OverviewTab character={data} />}
+            </AsyncBoundary>
+          </div>
+        )}
+
         {activeTab === "pvp" && (
           <div role="tabpanel" id="panel-pvp" aria-labelledby="tab-pvp">
             <PvpTab characterRef={characterRef} />

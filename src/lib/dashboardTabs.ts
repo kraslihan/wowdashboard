@@ -1,3 +1,3 @@
-export type DashboardTabId = "pvp" | "achievements" | "mounts" | "reputation";
+export type DashboardTabId = "overview" | "pvp" | "achievements" | "mounts" | "reputation";
 
-export const DASHBOARD_TABS: DashboardTabId[] = ["pvp", "achievements", "mounts", "reputation"];
+export const DASHBOARD_TABS: DashboardTabId[] = ["overview", "pvp", "achievements", "mounts", "reputation"];

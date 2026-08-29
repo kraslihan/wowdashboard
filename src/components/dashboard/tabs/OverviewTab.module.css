@@ -1,0 +1,238 @@
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
+  gap: 20px;
+  padding-top: 16px;
+  align-items: start;
+}
+
+@media (max-width: 720px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.left {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.render {
+  max-width: 220px;
+  max-height: 320px;
+  width: auto;
+  object-fit: contain;
+}
+
+.items {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 16px;
+  width: 100%;
+}
+
+@media (max-width: 480px) {
+  .items {
+    grid-template-columns: 1fr;
+  }
+}
+
+.itemsColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.itemRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px;
+  border-radius: 6px;
+}
+
+.itemRow:hover {
+  background: var(--surface-2);
+}
+
+.itemIconWrap {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border: 2px solid var(--q, var(--quality-common));
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+
+.itemIcon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.itemText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.itemName {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--q, var(--text-primary));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemMeta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.socketIcon {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.itemEnchant {
+  color: var(--quality-uncommon);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tooltip {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 50;
+  width: 260px;
+  padding: 14px 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.itemRow:hover .tooltip {
+  display: block;
+}
+
+.tooltipName {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--q, var(--text-primary));
+  margin-bottom: 4px;
+}
+
+.tooltipItemLevel {
+  font-size: 12px;
+  color: var(--chrome-accent-gold);
+  margin-bottom: 4px;
+}
+
+.tooltipTransmog {
+  font-size: 12px;
+  color: var(--q, var(--text-primary));
+  margin-bottom: 6px;
+}
+
+.tooltipLine {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+}
+
+.tooltipRight {
+  color: var(--text-muted);
+}
+
+.tooltipStatLine {
+  font-size: 12px;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+}
+
+.tooltipStatBonus {
+  font-size: 12px;
+  color: var(--quality-uncommon);
+  margin-bottom: 3px;
+}
+
+.tooltipDivider {
+  height: 1px;
+  background: var(--border);
+  margin: 8px 0;
+}
+
+.gold {
+  color: var(--chrome-accent-gold);
+}
+
+.silver {
+  color: var(--text-muted);
+}
+
+.copper {
+  color: var(--quality-legendary);
+}
+
+.right {
+  min-width: 0;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.statTile {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.statIcon {
+  color: var(--chrome-accent-gold);
+  margin-bottom: 2px;
+}
+
+.statValue {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.statLabel {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}

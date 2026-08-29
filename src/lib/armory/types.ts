@@ -72,6 +72,88 @@ export interface ArmoryPvp {
   };
 }
 
+// /character (main profile page): gear + stats.overview, used by the Overview tab.
+export interface ArmoryItemQuality {
+  type: string;
+  name: string;
+}
+
+export interface ArmoryItemStatEntry {
+  type: { type: string; name: string };
+  value: number;
+  display: {
+    display_string: string;
+    color?: { r: number; g: number; b: number; a: number };
+  };
+  is_equip_bonus?: boolean;
+}
+
+export interface ArmoryItemEnchantment {
+  display_string: string;
+  enchantment_id: number;
+}
+
+export interface ArmoryItemSocket {
+  socket_type: { type: string; name: string };
+  item?: { name: string; id: number };
+  display_string?: string;
+  media?: { content?: { assets?: { key: string; value: string }[] } };
+}
+
+export interface ArmoryGearItem {
+  id: number;
+  name: string;
+  quality: ArmoryItemQuality;
+  media?: { content?: { assets?: { key: string; value: string }[] } };
+  slot: { type: string; name: string };
+  inventory_type?: { type: string; name: string };
+  item_subclass?: { name: string };
+  binding?: { name: string };
+  level?: { value: number; display_string: string };
+  stats?: ArmoryItemStatEntry[];
+  enchantments?: ArmoryItemEnchantment[];
+  sockets?: ArmoryItemSocket[];
+  durability?: { display_string: string };
+  requirements?: {
+    level?: { display_string: string };
+    playable_classes?: { display_string: string };
+  };
+  sell_price?: {
+    display_strings: { gold: string; silver: string; copper: string };
+  };
+  transmog?: { display_string: string; item?: { name: string } };
+}
+
+export type ArmoryGearSlotKey =
+  | "head"
+  | "neck"
+  | "shoulder"
+  | "back"
+  | "chest"
+  | "wrist"
+  | "hand"
+  | "waist"
+  | "leg"
+  | "foot"
+  | "leftFinger"
+  | "rightFinger"
+  | "leftTrinket"
+  | "rightTrinket"
+  | "weapon"
+  | "offHand";
+
+export type ArmoryGear = Partial<Record<ArmoryGearSlotKey, ArmoryGearItem>>;
+
+export interface ArmoryStatEntry {
+  enum: string;
+  slug: string;
+  value: { type: string; value?: number };
+}
+
+export interface ArmoryStats {
+  overview?: ArmoryStatEntry[];
+}
+
 export interface RawArmoryCharacter {
   achievement: number;
   averageItemLevel: number;
@@ -86,6 +168,9 @@ export interface RawArmoryCharacter {
   spec?: ArmorySpec | null;
   avatar: ArmoryAvatar;
   pvp?: ArmoryPvp;
+  gear?: ArmoryGear;
+  stats?: ArmoryStats;
+  renderRaw?: { url: string };
 }
 
 export interface RawArmoryInitialState {
