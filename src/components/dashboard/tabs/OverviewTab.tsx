@@ -19,7 +19,18 @@ interface OverviewTabProps {
   character: CharacterSummary;
 }
 
-const LEFT_SLOTS: ArmoryGearSlotKey[] = ["head", "neck", "shoulder", "back", "chest", "wrist", "weapon", "offHand"];
+const LEFT_SLOTS: ArmoryGearSlotKey[] = [
+  "head",
+  "neck",
+  "shoulder",
+  "back",
+  "chest",
+  "shirt",
+  "tabard",
+  "wrist",
+  "weapon",
+  "offHand",
+];
 const RIGHT_SLOTS: ArmoryGearSlotKey[] = [
   "hand",
   "waist",
@@ -31,6 +42,27 @@ const RIGHT_SLOTS: ArmoryGearSlotKey[] = [
   "rightTrinket",
 ];
 
+const SLOT_DISPLAY_NAMES: Record<ArmoryGearSlotKey, string> = {
+  head: "Head",
+  neck: "Neck",
+  shoulder: "Shoulder",
+  back: "Back",
+  chest: "Chest",
+  shirt: "Shirt",
+  tabard: "Tabard",
+  wrist: "Wrist",
+  hand: "Hands",
+  waist: "Waist",
+  leg: "Legs",
+  foot: "Feet",
+  leftFinger: "Ring",
+  rightFinger: "Ring",
+  leftTrinket: "Trinket",
+  rightTrinket: "Trinket",
+  weapon: "Main Hand",
+  offHand: "Off Hand",
+};
+
 const STAT_ICONS: Record<string, (props: { className?: string }) => JSX.Element> = {
   health: HeartIcon,
   mana: FlaskIcon,
@@ -41,6 +73,22 @@ const STAT_ICONS: Record<string, (props: { className?: string }) => JSX.Element>
   mastery: CrownIcon,
   versatility: WrenchIcon,
 };
+
+function EmptySlotRow({ slotKey }: { slotKey: ArmoryGearSlotKey }) {
+  const slotName = SLOT_DISPLAY_NAMES[slotKey];
+
+  return (
+    <div className={styles.itemRow}>
+      <div className={styles.itemIconWrapEmpty} />
+      <div className={styles.itemText}>
+        <span className={styles.itemNameEmpty}>{slotName}</span>
+      </div>
+      <div className={styles.tooltip}>
+        <div className={styles.tooltipEmptyLine}>{slotName} (empty slot)</div>
+      </div>
+    </div>
+  );
+}
 
 function GearRow({ item }: { item: GearItemSummary }) {
   const style = { "--q": qualityColorVar(item.qualityType) } as CSSProperties;
@@ -108,12 +156,12 @@ function GearRow({ item }: { item: GearItemSummary }) {
 }
 
 function GearColumn({ slots, gear }: { slots: ArmoryGearSlotKey[]; gear: CharacterSummary["gear"] }) {
-  const items = slots.map((slot) => gear[slot]).filter((item): item is GearItemSummary => Boolean(item));
   return (
     <div className={styles.itemsColumn}>
-      {items.map((item) => (
-        <GearRow key={item.id} item={item} />
-      ))}
+      {slots.map((slot) => {
+        const item = gear[slot];
+        return item ? <GearRow key={slot} item={item} /> : <EmptySlotRow key={slot} slotKey={slot} />;
+      })}
     </div>
   );
 }
@@ -122,10 +170,6 @@ export function OverviewTab({ character }: OverviewTabProps) {
   return (
     <div className={styles.grid}>
       <div className={styles.left}>
-        {character.renderUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- external Blizzard-hosted image
-          <img src={proxiedImageUrl(character.renderUrl)} alt={character.name} className={styles.render} />
-        ) : null}
         <div className={styles.items}>
           <GearColumn slots={LEFT_SLOTS} gear={character.gear} />
           <GearColumn slots={RIGHT_SLOTS} gear={character.gear} />

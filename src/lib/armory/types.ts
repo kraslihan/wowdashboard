@@ -130,6 +130,8 @@ export type ArmoryGearSlotKey =
   | "shoulder"
   | "back"
   | "chest"
+  | "shirt"
+  | "tabard"
   | "wrist"
   | "hand"
   | "waist"
