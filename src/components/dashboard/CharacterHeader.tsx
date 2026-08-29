@@ -33,6 +33,10 @@ export function CharacterHeader({ character }: CharacterHeaderProps) {
         </div>
         <div className={styles.bottomRow}>
           <span className={styles.metaText}>{classLine}</span>
+          <span className={styles.metaDot} aria-hidden="true">
+            •
+          </span>
+          <span className={styles.metaText}>{character.realm.name}</span>
           {character.guild ? (
             <>
               <span className={styles.metaDot} aria-hidden="true">
@@ -41,10 +45,6 @@ export function CharacterHeader({ character }: CharacterHeaderProps) {
               <span className={styles.metaGuild}>‹{character.guild.name}›</span>
             </>
           ) : null}
-          <span className={styles.metaDot} aria-hidden="true">
-            •
-          </span>
-          <span className={styles.metaText}>{character.realm.name}</span>
         </div>
       </div>
     </header>
