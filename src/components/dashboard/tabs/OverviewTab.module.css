@@ -211,24 +211,31 @@
 .weaponSection {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  justify-content: center;
   width: 100%;
   margin-top: 14px;
   padding-top: 14px;
   border-top: 1px solid var(--border);
 }
 
+.weaponPrimary {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: default;
+}
+
 .weaponText {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  flex: 1;
 }
 
 .weaponName {
   font-size: 14px;
   font-weight: 600;
+  color: var(--q, var(--text-primary));
 }
 
 .weaponEnchant {
@@ -244,8 +251,8 @@
 
 .weaponIcons {
   display: flex;
+  align-items: center;
   gap: 10px;
-  flex-shrink: 0;
 }
 
 .weaponIconWrap {
@@ -279,6 +286,10 @@
 }
 
 .weaponIconWrap:hover .tooltip {
+  display: block;
+}
+
+.weaponPrimary:hover .tooltip {
   display: block;
 }
 

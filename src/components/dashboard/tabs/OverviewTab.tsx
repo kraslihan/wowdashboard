@@ -212,23 +212,42 @@ function WeaponIconBox({ item, slotKey }: { item: GearItemSummary | undefined; s
 function WeaponSection({ gear }: { gear: CharacterSummary["gear"] }) {
   const weapon = gear.weapon;
   const offHand = gear.offHand;
-  const primary = weapon ?? offHand;
+  const style = weapon ? ({ "--q": qualityColorVar(weapon.qualityType) } as CSSProperties) : undefined;
 
   return (
     <div className={styles.weaponSection}>
-      <div className={styles.weaponText}>
-        {primary ? (
-          <>
-            <span className={styles.weaponName} style={{ color: qualityColorVar(primary.qualityType) } as CSSProperties}>
-              {primary.name}
-            </span>
-            {primary.enchantText ? <span className={styles.weaponEnchant}>{primary.enchantText}</span> : null}
-          </>
-        ) : null}
-      </div>
-      {primary?.itemLevel ? <span className={styles.weaponLevel}>{primary.itemLevel}</span> : null}
       <div className={styles.weaponIcons}>
-        <WeaponIconBox item={weapon} slotKey="weapon" />
+        {/* Name, enchant, item level, and the main-hand icon share one hover
+          area so hovering the text reveals the same tooltip as the icon. */}
+        <div className={styles.weaponPrimary} style={style}>
+          <div className={styles.weaponText}>
+            {weapon ? (
+              <>
+                <span className={styles.weaponName}>{weapon.name}</span>
+                {weapon.enchantText ? <span className={styles.weaponEnchant}>{weapon.enchantText}</span> : null}
+              </>
+            ) : (
+              <span className={styles.itemNameEmpty}>{SLOT_DISPLAY_NAMES.weapon}</span>
+            )}
+          </div>
+          {weapon?.itemLevel ? <span className={styles.weaponLevel}>{weapon.itemLevel}</span> : null}
+          <div className={styles.weaponIconWrap}>
+            {weapon?.iconUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- external Blizzard-hosted image
+              <img src={proxiedImageUrl(weapon.iconUrl)} alt="" className={styles.weaponIcon} />
+            ) : (
+              <div className={styles.weaponIconEmpty} />
+            )}
+          </div>
+          <div className={styles.tooltip}>
+            {weapon ? (
+              <ItemTooltipContent item={weapon} />
+            ) : (
+              <div className={styles.tooltipEmptyLine}>{SLOT_DISPLAY_NAMES.weapon} (empty slot)</div>
+            )}
+          </div>
+        </div>
+
         <WeaponIconBox item={offHand} slotKey="offHand" />
       </div>
     </div>
