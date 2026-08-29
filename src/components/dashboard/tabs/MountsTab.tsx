@@ -4,8 +4,9 @@ import { useMemo, useState } from "react";
 import { armoryApiUrl, type CharacterRef } from "@/lib/character";
 import { proxiedImageUrl } from "@/lib/imageProxy";
 import { useArmoryResource } from "@/lib/useArmoryResource";
-import type { ArmoryMountsResponse } from "@/lib/armory/types";
+import type { ArmoryMount, ArmoryMountsResponse } from "@/lib/armory/types";
 import { AsyncBoundary } from "../AsyncBoundary";
+import { Modal } from "../Modal";
 import styles from "./MountsTab.module.css";
 
 interface MountsTabProps {
@@ -17,6 +18,7 @@ const PAGE_SIZE = 60;
 function MountsContent({ mounts }: { mounts: ArmoryMountsResponse }) {
   const [query, setQuery] = useState("");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [selectedMount, setSelectedMount] = useState<ArmoryMount | null>(null);
 
   const collected = useMemo(() => mounts.mounts.filter((mount) => mount.collected), [mounts.mounts]);
 
@@ -48,7 +50,12 @@ function MountsContent({ mounts }: { mounts: ArmoryMountsResponse }) {
       ) : (
         <div className={styles.grid}>
           {visible.map((mount) => (
-            <div key={mount.id} className={styles.card}>
+            <button
+              key={mount.id}
+              type="button"
+              className={styles.card}
+              onClick={() => setSelectedMount(mount)}
+            >
               {/* eslint-disable-next-line @next/next/no-img-element -- external Blizzard-hosted image */}
               <img
                 src={proxiedImageUrl(mount.render.url)}
@@ -57,7 +64,7 @@ function MountsContent({ mounts }: { mounts: ArmoryMountsResponse }) {
                 className={styles.image}
               />
               <span className={styles.name}>{mount.name}</span>
-            </div>
+            </button>
           ))}
         </div>
       )}
@@ -70,6 +77,20 @@ function MountsContent({ mounts }: { mounts: ArmoryMountsResponse }) {
         >
           Load more ({filtered.length - visibleCount} remaining)
         </button>
+      ) : null}
+
+      {selectedMount ? (
+        <Modal onClose={() => setSelectedMount(null)}>
+          <h2 className={styles.detailName}>{selectedMount.name}</h2>
+          <div className={styles.detailImageWrap}>
+            {/* eslint-disable-next-line @next/next/no-img-element -- external Blizzard-hosted image */}
+            <img
+              src={proxiedImageUrl(selectedMount.render.url)}
+              alt={selectedMount.name}
+              className={styles.detailImage}
+            />
+          </div>
+        </Modal>
       ) : null}
     </div>
   );

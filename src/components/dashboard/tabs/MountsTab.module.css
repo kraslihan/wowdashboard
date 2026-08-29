@@ -45,6 +45,9 @@
 }
 
 .card {
+  appearance: none;
+  font: inherit;
+  cursor: pointer;
   background: var(--surface-1);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -54,6 +57,10 @@
   align-items: center;
   gap: 8px;
   text-align: center;
+}
+
+.card:hover {
+  border-color: var(--chrome-accent-gold);
 }
 
 .image {
@@ -89,4 +96,24 @@
   font-size: 13px;
   padding: 24px 0;
   text-align: center;
+}
+
+.detailName {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 20px;
+  padding-right: 32px;
+}
+
+.detailImageWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.detailImage {
+  max-width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
 }
