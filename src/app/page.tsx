@@ -1,6 +1,5 @@
-import { DashboardShell } from "@/components/dashboard/DashboardShell";
-import { DEFAULT_CHARACTER } from "@/lib/character";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return <DashboardShell characterRef={DEFAULT_CHARACTER} />;
+  redirect("/pvp");
 }

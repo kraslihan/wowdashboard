@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { armoryApiUrl, type CharacterRef } from "@/lib/character";
+import type { DashboardTabId } from "@/lib/dashboardTabs";
 import { useArmoryResource } from "@/lib/useArmoryResource";
 import type { CharacterSummary } from "@/lib/armory/characterSummary";
 import { AsyncBoundary } from "./AsyncBoundary";
@@ -14,18 +14,18 @@ import { MountsTab } from "./tabs/MountsTab";
 import { ReputationTab } from "./tabs/ReputationTab";
 
 const TABS: TabItem[] = [
-  { id: "pvp", label: "PvP Status" },
-  { id: "achievements", label: "Achievements" },
-  { id: "mounts", label: "Mounts" },
-  { id: "reputations", label: "Reputation" },
+  { id: "pvp", label: "PvP Status", href: "/pvp" },
+  { id: "achievements", label: "Achievements", href: "/achievements" },
+  { id: "mounts", label: "Mounts", href: "/mounts" },
+  { id: "reputation", label: "Reputation", href: "/reputation" },
 ];
 
 interface DashboardShellProps {
   characterRef: CharacterRef;
+  activeTab: DashboardTabId;
 }
 
-export function DashboardShell({ characterRef }: DashboardShellProps) {
-  const [activeTab, setActiveTab] = useState<string>("pvp");
+export function DashboardShell({ characterRef, activeTab }: DashboardShellProps) {
   const character = useArmoryResource<CharacterSummary>(armoryApiUrl("character", characterRef));
 
   return (
@@ -34,7 +34,7 @@ export function DashboardShell({ characterRef }: DashboardShellProps) {
         {(data) => <CharacterHeader character={data} />}
       </AsyncBoundary>
 
-      <Tabs tabs={TABS} activeId={activeTab} onChange={setActiveTab} />
+      <Tabs tabs={TABS} activeId={activeTab} />
 
       <div className={styles.panels}>
         {activeTab === "pvp" && (
@@ -55,8 +55,8 @@ export function DashboardShell({ characterRef }: DashboardShellProps) {
           </div>
         )}
 
-        {activeTab === "reputations" && (
-          <div role="tabpanel" id="panel-reputations" aria-labelledby="tab-reputations">
+        {activeTab === "reputation" && (
+          <div role="tabpanel" id="panel-reputation" aria-labelledby="tab-reputation">
             <ReputationTab characterRef={characterRef} />
           </div>
         )}
