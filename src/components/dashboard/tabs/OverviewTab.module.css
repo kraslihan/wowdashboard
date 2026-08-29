@@ -293,8 +293,8 @@
 }
 
 .statTile {
-  background: var(--surface-1);
-  border: 1px solid var(--border);
+  background: var(--stat-bg, var(--surface-1));
+  border: 1px solid var(--stat-border, var(--border));
   border-radius: 10px;
   padding: 14px 10px;
   display: flex;
@@ -302,10 +302,18 @@
   align-items: center;
   gap: 4px;
   text-align: center;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.statTile:hover {
+  border-color: var(--stat-color, var(--chrome-accent-gold));
+  transform: translateY(-2px);
 }
 
 .statIcon {
-  color: var(--chrome-accent-gold);
+  color: var(--stat-color, var(--chrome-accent-gold));
   margin-bottom: 2px;
 }
 

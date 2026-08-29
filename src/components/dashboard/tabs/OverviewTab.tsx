@@ -65,6 +65,23 @@ const STAT_ICONS: Record<string, (props: { className?: string }) => JSX.Element>
   versatility: WrenchIcon,
 };
 
+interface StatColors {
+  bg: string;
+  border: string;
+  icon: string;
+}
+
+const STAT_COLORS: Record<string, StatColors> = {
+  health: { bg: "#1D1517", border: "#4B282D", icon: "#E25C64" },
+  mana: { bg: "#141922", border: "#29445F", icon: "#5D9FE8" },
+  intellect: { bg: "#191623", border: "#44365D", icon: "#A17BE8" },
+  stamina: { bg: "#151C18", border: "#304B39", icon: "#65B77C" },
+  "critical-strike": { bg: "#201911", border: "#59401F", icon: "#ECA735" },
+  haste: { bg: "#131D20", border: "#28505A", icon: "#55BDD0" },
+  mastery: { bg: "#1D1913", border: "#594522", icon: "#D7A83D" },
+  versatility: { bg: "#141C1B", border: "#2D4D48", icon: "#62B6A8" },
+};
+
 function ItemTooltipContent({ item }: { item: GearItemSummary }) {
   return (
     <>
@@ -233,8 +250,16 @@ export function OverviewTab({ character }: OverviewTabProps) {
         <div className={styles.statsGrid}>
           {character.overviewStats.map((stat) => {
             const Icon = STAT_ICONS[stat.slug];
+            const colors = STAT_COLORS[stat.slug];
+            const style = colors
+              ? ({
+                  "--stat-bg": colors.bg,
+                  "--stat-border": colors.border,
+                  "--stat-color": colors.icon,
+                } as CSSProperties)
+              : undefined;
             return (
-              <div key={stat.slug} className={styles.statTile}>
+              <div key={stat.slug} className={styles.statTile} style={style}>
                 {Icon ? <Icon className={styles.statIcon} /> : null}
                 <div className={styles.statValue}>{stat.displayValue}</div>
                 <div className={styles.statLabel}>{stat.label}</div>
