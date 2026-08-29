@@ -8,6 +8,10 @@ interface CharacterHeaderProps {
 }
 
 export function CharacterHeader({ character }: CharacterHeaderProps) {
+  const classLine = [String(character.level), character.race.name, character.spec?.name, character.class.name]
+    .filter((part): part is string => Boolean(part))
+    .join(" ");
+
   return (
     <header className={styles.header}>
       {/* eslint-disable-next-line @next/next/no-img-element -- external Blizzard-hosted image, no remote-pattern config needed */}
@@ -28,12 +32,19 @@ export function CharacterHeader({ character }: CharacterHeaderProps) {
           </span>
         </div>
         <div className={styles.bottomRow}>
-          <span>{character.level}</span>
-          <span>{character.race.name}</span>
-          {character.spec ? <span>{character.spec.name}</span> : null}
-          <span>{character.class.name}</span>
-          {character.guild ? <span className={styles.guild}>‹{character.guild.name}›</span> : null}
-          <span>{character.realm.name}</span>
+          <span className={styles.metaText}>{classLine}</span>
+          {character.guild ? (
+            <>
+              <span className={styles.metaDot} aria-hidden="true">
+                •
+              </span>
+              <span className={styles.metaGuild}>‹{character.guild.name}›</span>
+            </>
+          ) : null}
+          <span className={styles.metaDot} aria-hidden="true">
+            •
+          </span>
+          <span className={styles.metaText}>{character.realm.name}</span>
         </div>
       </div>
     </header>
