@@ -15,24 +15,57 @@ interface MountsTabProps {
 
 const PAGE_SIZE = 60;
 
+type MountFilter = "collected" | "missing" | "all";
+
+const FILTERS: { id: MountFilter; label: string }[] = [
+  { id: "collected", label: "Collected" },
+  { id: "missing", label: "Missing" },
+  { id: "all", label: "All" },
+];
+
 function MountsContent({ mounts }: { mounts: ArmoryMountsResponse }) {
   const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<MountFilter>("collected");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [selectedMount, setSelectedMount] = useState<ArmoryMount | null>(null);
 
-  const collected = useMemo(() => mounts.mounts.filter((mount) => mount.collected), [mounts.mounts]);
+  const byFilter = useMemo(() => {
+    if (filter === "collected") return mounts.mounts.filter((mount) => mount.collected);
+    if (filter === "missing") return mounts.mounts.filter((mount) => !mount.collected);
+    return mounts.mounts;
+  }, [mounts.mounts, filter]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return q ? collected.filter((mount) => mount.name.toLowerCase().includes(q)) : collected;
-  }, [collected, query]);
+    return q ? byFilter.filter((mount) => mount.name.toLowerCase().includes(q)) : byFilter;
+  }, [byFilter, query]);
 
   const visible = filtered.slice(0, visibleCount);
+
+  function handleFilterChange(next: MountFilter) {
+    setFilter(next);
+    setVisibleCount(PAGE_SIZE);
+  }
 
   return (
     <div className={styles.wrap}>
       <div className={styles.controls}>
-        <span className={styles.badge}>{mounts.mountsCollected} Mounts Collected</span>
+        <span className={styles.badge}>
+          {mounts.mountsCollected} / {mounts.mounts.length} Mounts Collected
+        </span>
+        <div className={styles.filterGroup} role="group" aria-label="Filter mounts">
+          {FILTERS.map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              className={styles.filterButton}
+              data-active={filter === f.id}
+              onClick={() => handleFilterChange(f.id)}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
         <input
           type="search"
           placeholder="Mount name"
@@ -46,7 +79,7 @@ function MountsContent({ mounts }: { mounts: ArmoryMountsResponse }) {
       </div>
 
       {filtered.length === 0 ? (
-        <p className={styles.empty}>No mounts match this search.</p>
+        <p className={styles.empty}>No mounts match this filter.</p>
       ) : (
         <div className={styles.grid}>
           {visible.map((mount) => (
@@ -54,6 +87,7 @@ function MountsContent({ mounts }: { mounts: ArmoryMountsResponse }) {
               key={mount.id}
               type="button"
               className={styles.card}
+              data-collected={mount.collected}
               onClick={() => setSelectedMount(mount)}
             >
               {/* eslint-disable-next-line @next/next/no-img-element -- external Blizzard-hosted image */}
@@ -82,6 +116,7 @@ function MountsContent({ mounts }: { mounts: ArmoryMountsResponse }) {
       {selectedMount ? (
         <Modal onClose={() => setSelectedMount(null)}>
           <h2 className={styles.detailName}>{selectedMount.name}</h2>
+          {!selectedMount.collected ? <span className={styles.detailMissing}>Not Collected</span> : null}
           <div className={styles.detailImageWrap}>
             {/* eslint-disable-next-line @next/next/no-img-element -- external Blizzard-hosted image */}
             <img

@@ -38,6 +38,37 @@
   font-size: 13px;
 }
 
+.filterGroup {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 8px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+}
+
+.filterButton {
+  appearance: none;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.filterButton:hover {
+  color: var(--text-primary);
+}
+
+.filterButton[data-active="true"] {
+  background: var(--surface-2);
+  color: var(--chrome-accent-gold);
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
@@ -61,6 +92,14 @@
 
 .card:hover {
   border-color: var(--chrome-accent-gold);
+}
+
+.card[data-collected="false"] {
+  opacity: 0.45;
+}
+
+.card[data-collected="false"]:hover {
+  opacity: 0.7;
 }
 
 .image {
@@ -102,14 +141,30 @@
   font-size: 22px;
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 20px;
+  margin-bottom: 8px;
   padding-right: 32px;
+}
+
+.detailMissing {
+  display: inline-block;
+  margin-top: 6px;
+  margin-bottom: 14px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .detailImageWrap {
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-top: 12px;
 }
 
 .detailImage {
