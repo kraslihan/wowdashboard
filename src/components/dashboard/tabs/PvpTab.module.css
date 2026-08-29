@@ -43,8 +43,13 @@
   gap: 10px;
   padding: 10px 12px;
   border-radius: 8px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+  /* Mode rows set --mode-bg/--mode-border via inline style; Honor and
+     Honorable Kills leave them unset and keep the neutral defaults. */
+  background: var(--mode-bg, var(--surface-2));
+  border: 1px solid var(--mode-border, var(--border));
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .listIconWrap {
@@ -54,6 +59,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 50%;
+  border: 1.5px solid var(--mode-border, transparent);
 }
 
 .listIcon {
@@ -96,6 +103,13 @@
   flex-shrink: 0;
 }
 
+.listRatingMuted {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
 .historyWrap {
   position: sticky;
   top: 16px;
@@ -119,13 +133,13 @@
 .historyTitle {
   font-size: 13px;
   font-weight: 700;
-  color: var(--chrome-accent-gold);
+  color: var(--text-primary);
 }
 
 .historyCol {
   font-size: 11px;
   font-weight: 700;
-  color: var(--chrome-accent-gold);
+  color: var(--text-muted);
   text-align: center;
 }
 
@@ -135,10 +149,19 @@
   gap: 6px;
   padding: 12px 16px;
   align-items: center;
+  border-left: 2px solid transparent;
 }
 
 .historyRow[data-alt="true"] {
   background: rgba(255, 255, 255, 0.03);
+}
+
+/* The character's main spec (Fire) gets a quiet warm tint so it stands out
+   in the seasonal history without any glow or bright fill. */
+.historyRow[data-highlight="true"] {
+  background: #241813;
+  border-left-color: var(--chrome-accent-gold);
+  padding-left: 14px;
 }
 
 .historyLabel {
@@ -155,9 +178,43 @@
   text-align: center;
 }
 
-.historyWins {
+.winsPositive {
   font-size: 12px;
   color: var(--quality-uncommon);
   text-align: center;
   font-weight: 600;
+}
+
+.winsZero {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  font-weight: 600;
+}
+
+.winPctGood {
+  font-size: 12px;
+  color: var(--quality-uncommon);
+  text-align: center;
+  font-weight: 600;
+}
+
+.winPctMid {
+  font-size: 12px;
+  color: var(--chrome-accent-gold);
+  text-align: center;
+  font-weight: 600;
+}
+
+.winPctLow {
+  font-size: 12px;
+  color: #d97c82;
+  text-align: center;
+  font-weight: 600;
+}
+
+.winPctNone {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
 }

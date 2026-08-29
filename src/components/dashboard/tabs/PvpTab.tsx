@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { armoryApiUrl, type CharacterRef } from "@/lib/character";
 import { proxiedImageUrl } from "@/lib/imageProxy";
 import { useArmoryResource } from "@/lib/useArmoryResource";
@@ -19,6 +20,23 @@ interface ListRow {
   ratingText: string;
   iconUrl: string | null;
 }
+
+// Each PvP mode gets a low-intensity identity color (a barely-tinted
+// background, a matching border, and an icon ring) so modes are easy to tell
+// apart at a glance, without turning the cards into solid color blocks.
+interface ModeColors {
+  bg: string;
+  border: string;
+  icon: string;
+}
+
+const MODE_COLORS: Record<string, ModeColors> = {
+  "2v2": { bg: "#121A22", border: "#2A4560", icon: "#4FA8E8" }, // blue
+  "3v3": { bg: "#171423", border: "#43346B", icon: "#A78BFA" }, // purple
+  battlegrounds: { bg: "#1D1517", border: "#4B282D", icon: "#D97C82" }, // soft red
+  shuffle: { bg: "#101B1F", border: "#254A54", icon: "#7DD3E0" }, // ice blue
+  blitz: { bg: "#10201C", border: "#1F5449", icon: "#3FCDB0" }, // turquoise
+};
 
 function ratingText(bracket: ArmoryPvpBracket | undefined): string {
   if (!bracket || bracket.rating <= 0) return "Unranked";
@@ -82,6 +100,8 @@ interface HistoryRow {
   label: string;
   games: number;
   wins: number;
+  // The character's main spec gets a subtle highlight in the history table.
+  highlight?: boolean;
 }
 
 function buildHistoryRows(pvp: ArmoryPvp): HistoryRow[] {
@@ -102,6 +122,7 @@ function buildHistoryRows(pvp: ArmoryPvp): HistoryRow[] {
       label: `Solo Shuffle (${spec.specialization.name})`,
       games: spec.total,
       wins: spec.winCount,
+      highlight: spec.specialization.name === "Fire",
     });
   }
 
@@ -120,9 +141,31 @@ function winPercentText(games: number, wins: number): string {
   return `${Math.round((wins / games) * 100)}%`;
 }
 
+function winsClass(wins: number): string {
+  return wins > 0 ? styles.winsPositive : styles.winsZero;
+}
+
+function winPercentClass(games: number, wins: number): string {
+  if (games <= 0) return styles.winPctNone;
+  const pct = (wins / games) * 100;
+  if (pct >= 60) return styles.winPctGood;
+  if (pct >= 40) return styles.winPctMid;
+  return styles.winPctLow;
+}
+
 function ListItemRow({ row }: { row: ListRow }) {
+  const modeColors = MODE_COLORS[row.key];
+  const style = modeColors
+    ? ({
+        "--mode-bg": modeColors.bg,
+        "--mode-border": modeColors.border,
+        "--mode-icon": modeColors.icon,
+      } as CSSProperties)
+    : undefined;
+  const isUnranked = row.ratingText === "Unranked";
+
   return (
-    <div className={styles.listRow}>
+    <div className={styles.listRow} style={style}>
       <div className={styles.listIconWrap}>
         {row.iconUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- external Blizzard-hosted image
@@ -137,7 +180,7 @@ function ListItemRow({ row }: { row: ListRow }) {
         <span className={styles.listName}>{row.name}</span>
         {row.category ? <span className={styles.listCategory}>{row.category}</span> : null}
       </div>
-      <span className={styles.listRating}>{row.ratingText}</span>
+      <span className={isUnranked ? styles.listRatingMuted : styles.listRating}>{row.ratingText}</span>
     </div>
   );
 }
@@ -152,11 +195,16 @@ function HistoryTable({ rows }: { rows: HistoryRow[] }) {
         <span className={styles.historyCol}>Win %</span>
       </div>
       {rows.map((row, index) => (
-        <div key={row.key} className={styles.historyRow} data-alt={index % 2 === 1}>
+        <div
+          key={row.key}
+          className={styles.historyRow}
+          data-alt={index % 2 === 1}
+          data-highlight={row.highlight === true}
+        >
           <span className={styles.historyLabel}>{row.label}</span>
           <span className={styles.historyValue}>{row.games}</span>
-          <span className={styles.historyWins}>{row.wins}</span>
-          <span className={styles.historyValue}>{winPercentText(row.games, row.wins)}</span>
+          <span className={winsClass(row.wins)}>{row.wins}</span>
+          <span className={winPercentClass(row.games, row.wins)}>{winPercentText(row.games, row.wins)}</span>
         </div>
       ))}
     </div>
