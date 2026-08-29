@@ -8,13 +8,40 @@ interface ArmoryResourceState<T> {
   loading: boolean;
 }
 
-// Keyed by request URL so switching tabs back and forth doesn't re-fetch.
+// Keyed by request URL so switching tabs back and forth doesn't re-fetch,
+// and so a background prefetch and an on-screen hook requesting the same
+// URL share one in-flight request instead of firing twice.
 const cache = new Map<string, unknown>();
+const inFlight = new Map<string, Promise<unknown>>();
 
 function resourceStateFor<T>(url: string): ArmoryResourceState<T> {
   return cache.has(url)
     ? { data: cache.get(url) as T, error: null, loading: false }
     : { data: null, error: null, loading: true };
+}
+
+async function fetchAndCache<T>(url: string): Promise<T> {
+  const existing = inFlight.get(url);
+  if (existing) return existing as Promise<T>;
+
+  const request = fetch(url)
+    .then(async (response) => {
+      if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(body?.error ?? `Request failed with status ${response.status}`);
+      }
+      return (await response.json()) as T;
+    })
+    .then((data) => {
+      cache.set(url, data);
+      return data;
+    })
+    .finally(() => {
+      inFlight.delete(url);
+    });
+
+  inFlight.set(url, request);
+  return request;
 }
 
 export function useArmoryResource<T>(url: string): ArmoryResourceState<T> {
@@ -33,17 +60,9 @@ export function useArmoryResource<T>(url: string): ArmoryResourceState<T> {
 
     let cancelled = false;
 
-    fetch(url)
-      .then(async (response) => {
-        if (!response.ok) {
-          const body = (await response.json().catch(() => null)) as { error?: string } | null;
-          throw new Error(body?.error ?? `Request failed with status ${response.status}`);
-        }
-        return (await response.json()) as T;
-      })
+    fetchAndCache<T>(url)
       .then((data) => {
         if (cancelled) return;
-        cache.set(url, data);
         setState({ data, error: null, loading: false });
       })
       .catch((error: unknown) => {
@@ -57,4 +76,15 @@ export function useArmoryResource<T>(url: string): ArmoryResourceState<T> {
   }, [url]);
 
   return state;
+}
+
+// Warms the cache for a URL without subscribing any component to it — used
+// to prefetch tabs the user hasn't opened yet, so switching to them later
+// hits the cache instead of showing a loading state.
+export function prefetchArmoryResource(url: string): void {
+  if (cache.has(url) || inFlight.has(url)) return;
+  void fetchAndCache(url).catch(() => {
+    // Swallow prefetch failures — the tab's own useArmoryResource call will
+    // retry and surface the error normally if/when the user visits it.
+  });
 }

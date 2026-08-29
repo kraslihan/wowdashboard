@@ -1,8 +1,9 @@
 "use client";
 
-import { armoryApiUrl, type CharacterRef } from "@/lib/character";
+import { useEffect } from "react";
+import { armoryApiUrl, type ArmoryService, type CharacterRef } from "@/lib/character";
 import type { DashboardTabId } from "@/lib/dashboardTabs";
-import { useArmoryResource } from "@/lib/useArmoryResource";
+import { prefetchArmoryResource, useArmoryResource } from "@/lib/useArmoryResource";
 import type { CharacterSummary } from "@/lib/armory/characterSummary";
 import { AsyncBoundary } from "./AsyncBoundary";
 import { CharacterHeader } from "./CharacterHeader";
@@ -22,6 +23,15 @@ const TABS: TabItem[] = [
   { id: "reputation", label: "Reputation", href: "/reputation" },
 ];
 
+// Every tab that fetches its own data (Overview reuses the character
+// response, so it isn't listed here).
+const TAB_SERVICES: Partial<Record<DashboardTabId, ArmoryService>> = {
+  pvp: "pvp",
+  achievements: "achievements",
+  mounts: "mounts",
+  reputation: "reputation",
+};
+
 interface DashboardShellProps {
   characterRef: CharacterRef;
   activeTab: DashboardTabId;
@@ -29,6 +39,17 @@ interface DashboardShellProps {
 
 export function DashboardShell({ characterRef, activeTab }: DashboardShellProps) {
   const character = useArmoryResource<CharacterSummary>(armoryApiUrl("character", characterRef));
+
+  // Warm the cache for every tab the user hasn't opened yet, in the
+  // background, so switching to it later is instant instead of showing a
+  // loading state. The active tab already fetches itself via its own
+  // useArmoryResource call.
+  useEffect(() => {
+    for (const [tabId, service] of Object.entries(TAB_SERVICES) as [DashboardTabId, ArmoryService][]) {
+      if (tabId === activeTab) continue;
+      prefetchArmoryResource(armoryApiUrl(service, characterRef));
+    }
+  }, [characterRef, activeTab]);
 
   return (
     <div className={styles.shell}>
