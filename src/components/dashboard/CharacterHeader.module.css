@@ -2,8 +2,8 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  background: var(--chrome-bg);
-  border: 1px solid var(--chrome-border);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 14px 20px;
 }
@@ -15,7 +15,7 @@
   object-fit: cover;
   flex-shrink: 0;
   background: #000;
-  border: 2px solid var(--chrome-border);
+  border: 2px solid var(--border);
 }
 
 .info {
@@ -39,7 +39,7 @@
 }
 
 .divider {
-  color: var(--chrome-text-muted);
+  color: var(--text-muted);
   font-weight: 300;
 }
 
@@ -63,7 +63,7 @@
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  color: var(--chrome-text-muted);
+  color: var(--text-muted);
 }
 
 .guild {

@@ -1,6 +1,7 @@
 "use client";
 
 import { armoryApiUrl, type CharacterRef } from "@/lib/character";
+import { proxiedImageUrl } from "@/lib/imageProxy";
 import { useArmoryResource } from "@/lib/useArmoryResource";
 import type { ArmoryPvp, ArmoryPvpBracket, ArmoryShuffleSpec } from "@/lib/armory/types";
 import { AsyncBoundary } from "../AsyncBoundary";
@@ -30,7 +31,7 @@ function BracketTile({
     <div className={styles.tile}>
       {bracket.tier.icon?.url ? (
         // eslint-disable-next-line @next/next/no-img-element -- external Blizzard-hosted image
-        <img src={bracket.tier.icon.url} alt="" className={styles.tileArt} />
+        <img src={proxiedImageUrl(bracket.tier.icon.url)} alt="" className={styles.tileArt} />
       ) : (
         <div className={styles.tileArtPlaceholder} />
       )}

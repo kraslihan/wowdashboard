@@ -1,4 +1,5 @@
 import type { CharacterSummary } from "@/lib/armory/characterSummary";
+import { proxiedImageUrl } from "@/lib/imageProxy";
 import { CrossedSwordsIcon, ShieldIcon } from "./icons";
 import styles from "./CharacterHeader.module.css";
 
@@ -10,7 +11,7 @@ export function CharacterHeader({ character }: CharacterHeaderProps) {
   return (
     <header className={styles.header}>
       {/* eslint-disable-next-line @next/next/no-img-element -- external Blizzard-hosted image, no remote-pattern config needed */}
-      <img src={character.avatar.url} alt={`${character.name} avatar`} className={styles.avatar} />
+      <img src={proxiedImageUrl(character.avatar.url)} alt={`${character.name} avatar`} className={styles.avatar} />
       <div className={styles.info}>
         <div className={styles.topRow}>
           <span className={styles.name}>{character.name}</span>

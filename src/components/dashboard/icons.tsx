@@ -51,6 +51,27 @@ export function HexagonIcon({ className }: IconProps) {
   );
 }
 
+export function LaurelShieldIcon({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 48 48"
+      width="48"
+      height="48"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M24 8 34 12v10c0 8-6 13-10 15-4-2-10-7-10-15V12l10-4Z" />
+      <path d="M8 14c-2 4-2 10 2 16M8 14c3 0 6 2 7 6M6 30c2 3 6 5 10 5" />
+      <path d="M40 14c2 4 2 10-2 16M40 14c-3 0-6 2-7 6M42 30c-2 3-6 5-10 5" />
+    </svg>
+  );
+}
+
 export function ChevronIcon({ className }: IconProps) {
   return (
     <svg

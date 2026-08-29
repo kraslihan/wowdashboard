@@ -1,24 +1,27 @@
+/* Committed to a single dark "armory" theme throughout (not toggled by
+   system light/dark) so the whole page — tabs included — shares one
+   consistent background. */
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 
-  --surface-page: #f9f9f7;
-  --surface-1: #fcfcfb;
-  --surface-2: #ffffff;
-  --text-primary: #0b0b0b;
-  --text-secondary: #52514e;
-  --text-muted: #898781;
-  --border: rgba(11, 11, 11, 0.1);
-  --gridline: #e1e0d9;
+  --surface-page: #131110;
+  --surface-1: #17130f;
+  --surface-2: #1c1815;
+  --text-primary: #f5f3ef;
+  --text-secondary: #c9c4ba;
+  --text-muted: #a39d92;
+  --border: rgba(255, 255, 255, 0.1);
+  --gridline: #2c2822;
 
-  --accent: #2a78d6;
-  --accent-track: #cde2fb;
-  --accent-strong: #184f95;
+  --accent: #3987e5;
+  --accent-track: #2a2620;
+  --accent-strong: #86b6ef;
 
   --status-good: #0ca30c;
   --status-warning: #fab219;
   --status-serious: #ec835a;
   --status-critical: #d03b3b;
-  --success-text: #006300;
+  --success-text: #0ca30c;
 
   /* Blizzard's own item-quality colors, not part of the categorical palette:
      used because WoW players already read these colors as quality by convention. */
@@ -28,38 +31,11 @@
   --quality-epic: #a335ee;
   --quality-legendary: #ff8000;
 
-  /* "Armory chrome": a deliberately always-dark game-UI look for the character
-     header and PvP panel, independent of the site's light/dark toggle. */
-  --chrome-bg: #131110;
-  --chrome-panel: #17130f;
-  --chrome-border: rgba(255, 255, 255, 0.1);
-  --chrome-text: #f5f3ef;
-  --chrome-text-muted: #a39d92;
+  /* "Armory chrome" accents used in the character header and PvP panel. */
   --chrome-accent-gold: #e3a63e;
   --chrome-accent-blue: #4fa8e8;
 
   --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-
-    --surface-page: #0d0d0d;
-    --surface-1: #1a1a19;
-    --surface-2: #232322;
-    --text-primary: #ffffff;
-    --text-secondary: #c3c2b7;
-    --text-muted: #898781;
-    --border: rgba(255, 255, 255, 0.1);
-    --gridline: #2c2c2a;
-
-    --accent: #3987e5;
-    --accent-track: #184f95;
-    --accent-strong: #86b6ef;
-
-    --success-text: #0ca30c;
-  }
 }
 
 html {

@@ -1,33 +1,66 @@
-.wrap {
-  padding-top: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.kpis {
+.grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 12px;
+  padding-top: 16px;
 }
 
-.list {
-  background: var(--surface-2);
+.card {
+  background: var(--surface-1);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 16px;
+  padding: 20px 12px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
 }
 
-.rowNoTotal {
+.ring {
+  --pct: 0;
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: conic-gradient(var(--chrome-accent-gold) calc(var(--pct) * 3.6deg), var(--border) 0deg);
+}
+
+.ringValue {
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: var(--surface-1);
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  justify-content: center;
   font-size: 13px;
+  font-weight: 700;
   color: var(--text-primary);
 }
 
-.rowCount {
-  color: var(--text-secondary);
+.laurel {
+  width: 56px;
+  height: 56px;
+  color: var(--text-muted);
+}
+
+.name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.points {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--chrome-accent-gold);
+}
+
+.pointIcon {
+  color: var(--chrome-accent-gold);
+  flex-shrink: 0;
 }

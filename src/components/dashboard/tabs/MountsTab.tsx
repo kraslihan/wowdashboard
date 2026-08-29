@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo, useState, type CSSProperties } from "react";
+import { useMemo, useState } from "react";
 import { armoryApiUrl, type CharacterRef } from "@/lib/character";
+import { proxiedImageUrl } from "@/lib/imageProxy";
 import { useArmoryResource } from "@/lib/useArmoryResource";
 import type { ArmoryMountsResponse } from "@/lib/armory/types";
 import { AsyncBoundary } from "../AsyncBoundary";
-import { Meter } from "../Meter";
 import styles from "./MountsTab.module.css";
 
 interface MountsTabProps {
@@ -14,50 +14,26 @@ interface MountsTabProps {
 
 const PAGE_SIZE = 60;
 
-function qualityColor(slug: string): string {
-  switch (slug) {
-    case "uncommon":
-      return "var(--quality-uncommon)";
-    case "rare":
-      return "var(--quality-rare)";
-    case "epic":
-      return "var(--quality-epic)";
-    case "legendary":
-      return "var(--quality-legendary)";
-    default:
-      return "var(--quality-common)";
-  }
-}
-
 function MountsContent({ mounts }: { mounts: ArmoryMountsResponse }) {
   const [query, setQuery] = useState("");
-  const [collectedOnly, setCollectedOnly] = useState(true);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+  const collected = useMemo(() => mounts.mounts.filter((mount) => mount.collected), [mounts.mounts]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return mounts.mounts.filter((mount) => {
-      if (collectedOnly && !mount.collected) return false;
-      if (q && !mount.name.toLowerCase().includes(q)) return false;
-      return true;
-    });
-  }, [mounts.mounts, query, collectedOnly]);
+    return q ? collected.filter((mount) => mount.name.toLowerCase().includes(q)) : collected;
+  }, [collected, query]);
 
   const visible = filtered.slice(0, visibleCount);
 
   return (
     <div className={styles.wrap}>
-      <Meter
-        label="Mounts collected"
-        value={mounts.mountsCollected}
-        max={mounts.mounts.length}
-        tone={mounts.mountsCollected >= mounts.mounts.length ? "good" : "accent"}
-      />
-
       <div className={styles.controls}>
+        <span className={styles.badge}>{mounts.mountsCollected} Mounts Collected</span>
         <input
           type="search"
-          placeholder="Search mounts…"
+          placeholder="Mount name"
           value={query}
           onChange={(event) => {
             setQuery(event.target.value);
@@ -65,32 +41,21 @@ function MountsContent({ mounts }: { mounts: ArmoryMountsResponse }) {
           }}
           className={styles.search}
         />
-        <label className={styles.toggle}>
-          <input
-            type="checkbox"
-            checked={collectedOnly}
-            onChange={(event) => {
-              setCollectedOnly(event.target.checked);
-              setVisibleCount(PAGE_SIZE);
-            }}
-          />
-          Collected only
-        </label>
       </div>
 
       {filtered.length === 0 ? (
-        <p className={styles.empty}>No mounts match this filter.</p>
+        <p className={styles.empty}>No mounts match this search.</p>
       ) : (
         <div className={styles.grid}>
           {visible.map((mount) => (
-            <div
-              key={mount.id}
-              className={styles.card}
-              data-collected={mount.collected}
-              style={{ "--quality-color": qualityColor(mount.quality.slug) } as CSSProperties}
-            >
+            <div key={mount.id} className={styles.card}>
               {/* eslint-disable-next-line @next/next/no-img-element -- external Blizzard-hosted image */}
-              <img src={mount.render.url} alt={mount.name} loading="lazy" className={styles.image} />
+              <img
+                src={proxiedImageUrl(mount.render.url)}
+                alt={mount.name}
+                loading="lazy"
+                className={styles.image}
+              />
               <span className={styles.name}>{mount.name}</span>
             </div>
           ))}
