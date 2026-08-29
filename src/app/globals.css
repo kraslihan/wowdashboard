@@ -28,6 +28,16 @@
   --quality-epic: #a335ee;
   --quality-legendary: #ff8000;
 
+  /* "Armory chrome": a deliberately always-dark game-UI look for the character
+     header and PvP panel, independent of the site's light/dark toggle. */
+  --chrome-bg: #131110;
+  --chrome-panel: #17130f;
+  --chrome-border: rgba(255, 255, 255, 0.1);
+  --chrome-text: #f5f3ef;
+  --chrome-text-muted: #a39d92;
+  --chrome-accent-gold: #e3a63e;
+  --chrome-accent-blue: #4fa8e8;
+
   --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 

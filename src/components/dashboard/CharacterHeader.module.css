@@ -2,50 +2,70 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+  background: var(--chrome-bg);
+  border: 1px solid var(--chrome-border);
   border-radius: 12px;
-  padding: 16px 20px;
+  padding: 14px 20px;
 }
 
 .avatar {
-  width: 64px;
-  height: 64px;
-  border-radius: 10px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
-  background: var(--surface-1);
+  background: #000;
+  border: 2px solid var(--chrome-border);
 }
 
 .info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   min-width: 0;
 }
 
-.nameRow {
+.topRow {
   display: flex;
-  align-items: baseline;
-  gap: 10px;
+  align-items: center;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
 .name {
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--text-primary);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--chrome-accent-blue);
 }
 
-.realm {
-  font-size: 13px;
-  color: var(--text-secondary);
+.divider {
+  color: var(--chrome-text-muted);
+  font-weight: 300;
 }
 
-.meta {
+.stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--chrome-accent-gold);
+}
+
+.statIcon {
+  color: var(--chrome-accent-gold);
+  flex-shrink: 0;
+}
+
+.bottomRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  align-items: center;
+  gap: 8px;
   font-size: 13px;
-  color: var(--text-secondary);
+  color: var(--chrome-text-muted);
+}
+
+.guild {
+  color: var(--chrome-accent-gold);
 }

@@ -8,18 +8,16 @@ import { AsyncBoundary } from "./AsyncBoundary";
 import { CharacterHeader } from "./CharacterHeader";
 import { Tabs, type TabItem } from "./Tabs";
 import styles from "./DashboardShell.module.css";
-import { OverviewTab } from "./tabs/OverviewTab";
 import { PvpTab } from "./tabs/PvpTab";
 import { AchievementsTab } from "./tabs/AchievementsTab";
 import { MountsTab } from "./tabs/MountsTab";
 import { ReputationTab } from "./tabs/ReputationTab";
 
 const TABS: TabItem[] = [
-  { id: "overview", label: "Overview" },
-  { id: "pvp", label: "PvP Dashboard" },
+  { id: "pvp", label: "PvP Status" },
   { id: "achievements", label: "Achievements" },
   { id: "mounts", label: "Mounts" },
-  { id: "reputations", label: "Reputations" },
+  { id: "reputations", label: "Reputation" },
 ];
 
 interface DashboardShellProps {
@@ -27,7 +25,7 @@ interface DashboardShellProps {
 }
 
 export function DashboardShell({ characterRef }: DashboardShellProps) {
-  const [activeTab, setActiveTab] = useState<string>("overview");
+  const [activeTab, setActiveTab] = useState<string>("pvp");
   const character = useArmoryResource<CharacterSummary>(armoryApiUrl("character", characterRef));
 
   return (
@@ -39,12 +37,6 @@ export function DashboardShell({ characterRef }: DashboardShellProps) {
       <Tabs tabs={TABS} activeId={activeTab} onChange={setActiveTab} />
 
       <div className={styles.panels}>
-        <div role="tabpanel" id="panel-overview" aria-labelledby="tab-overview" hidden={activeTab !== "overview"}>
-          <AsyncBoundary loading={character.loading} error={character.error} data={character.data}>
-            {(data) => <OverviewTab character={data} />}
-          </AsyncBoundary>
-        </div>
-
         {activeTab === "pvp" && (
           <div role="tabpanel" id="panel-pvp" aria-labelledby="tab-pvp">
             <PvpTab characterRef={characterRef} />

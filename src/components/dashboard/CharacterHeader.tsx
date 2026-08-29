@@ -1,4 +1,5 @@
 import type { CharacterSummary } from "@/lib/armory/characterSummary";
+import { CrossedSwordsIcon, ShieldIcon } from "./icons";
 import styles from "./CharacterHeader.module.css";
 
 interface CharacterHeaderProps {
@@ -11,32 +12,27 @@ export function CharacterHeader({ character }: CharacterHeaderProps) {
       {/* eslint-disable-next-line @next/next/no-img-element -- external Blizzard-hosted image, no remote-pattern config needed */}
       <img src={character.avatar.url} alt={`${character.name} avatar`} className={styles.avatar} />
       <div className={styles.info}>
-        <div className={styles.nameRow}>
-          <h1 className={styles.name}>{character.name}</h1>
-          <span className={styles.realm}>
-            {character.realm.name} ({character.region.toUpperCase()})
+        <div className={styles.topRow}>
+          <span className={styles.name}>{character.name}</span>
+          <span className={styles.divider} aria-hidden="true">
+            |
+          </span>
+          <span className={styles.stat}>
+            <ShieldIcon className={styles.statIcon} />
+            {character.achievement.toLocaleString()}
+          </span>
+          <span className={styles.stat}>
+            <CrossedSwordsIcon className={styles.statIcon} />
+            {character.averageItemLevel} ILVL
           </span>
         </div>
-        <div className={styles.meta}>
-          <span>Level {character.level}</span>
-          <span aria-hidden="true">·</span>
-          <span>
-            {character.race.name} {character.class.name}
-          </span>
-          {character.spec ? (
-            <>
-              <span aria-hidden="true">·</span>
-              <span>{character.spec.name}</span>
-            </>
-          ) : null}
-          <span aria-hidden="true">·</span>
-          <span>{character.faction.name}</span>
-          {character.guild ? (
-            <>
-              <span aria-hidden="true">·</span>
-              <span>&lt;{character.guild.name}&gt;</span>
-            </>
-          ) : null}
+        <div className={styles.bottomRow}>
+          <span>{character.level}</span>
+          <span>{character.race.name}</span>
+          {character.spec ? <span>{character.spec.name}</span> : null}
+          <span>{character.class.name}</span>
+          {character.guild ? <span className={styles.guild}>‹{character.guild.name}›</span> : null}
+          <span>{character.realm.name}</span>
         </div>
       </div>
     </header>
