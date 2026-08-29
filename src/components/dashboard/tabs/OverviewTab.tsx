@@ -19,18 +19,9 @@ interface OverviewTabProps {
   character: CharacterSummary;
 }
 
-const LEFT_SLOTS: ArmoryGearSlotKey[] = [
-  "head",
-  "neck",
-  "shoulder",
-  "back",
-  "chest",
-  "shirt",
-  "tabard",
-  "wrist",
-  "weapon",
-  "offHand",
-];
+// Weapon and off hand are shown separately, below the two-column list, to
+// match the real armory's layout.
+const LEFT_SLOTS: ArmoryGearSlotKey[] = ["head", "neck", "shoulder", "back", "chest", "shirt", "tabard", "wrist"];
 const RIGHT_SLOTS: ArmoryGearSlotKey[] = [
   "hand",
   "waist",
@@ -74,6 +65,49 @@ const STAT_ICONS: Record<string, (props: { className?: string }) => JSX.Element>
   versatility: WrenchIcon,
 };
 
+function ItemTooltipContent({ item }: { item: GearItemSummary }) {
+  return (
+    <>
+      <div className={styles.tooltipName}>{item.name}</div>
+      {item.itemLevel ? <div className={styles.tooltipItemLevel}>Item Level {item.itemLevel}</div> : null}
+      {item.transmogText ? (
+        <div className={styles.tooltipTransmog}>
+          Transmogrified to:
+          <br />
+          {item.transmogText}
+        </div>
+      ) : null}
+      {item.bindingText ? <div className={styles.tooltipLine}>{item.bindingText}</div> : null}
+      <div className={styles.tooltipLine}>
+        <span>{item.slotName}</span>
+        {item.subclassName ? <span className={styles.tooltipRight}>{item.subclassName}</span> : null}
+      </div>
+      {item.stats.map((stat) => (
+        <div key={stat.text} className={stat.isBonus ? styles.tooltipStatBonus : styles.tooltipStatLine}>
+          {stat.text}
+        </div>
+      ))}
+      {item.enchantText ? <div className={styles.tooltipStatBonus}>{item.enchantText}</div> : null}
+      {item.durabilityText || item.requirementsText.length > 0 || item.sellPrice ? (
+        <div className={styles.tooltipDivider} />
+      ) : null}
+      {item.durabilityText ? <div className={styles.tooltipLine}>{item.durabilityText}</div> : null}
+      {item.requirementsText.map((text) => (
+        <div key={text} className={styles.tooltipLine}>
+          {text}
+        </div>
+      ))}
+      {item.sellPrice ? (
+        <div className={styles.tooltipLine}>
+          Sell Price: <span className={styles.gold}>{item.sellPrice.gold}</span>{" "}
+          <span className={styles.silver}>{item.sellPrice.silver}</span>{" "}
+          <span className={styles.copper}>{item.sellPrice.copper}</span>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
 function EmptySlotRow({ slotKey }: { slotKey: ArmoryGearSlotKey }) {
   const slotName = SLOT_DISPLAY_NAMES[slotKey];
 
@@ -114,42 +148,7 @@ function GearRow({ item }: { item: GearItemSummary }) {
       </div>
 
       <div className={styles.tooltip}>
-        <div className={styles.tooltipName}>{item.name}</div>
-        {item.itemLevel ? <div className={styles.tooltipItemLevel}>Item Level {item.itemLevel}</div> : null}
-        {item.transmogText ? (
-          <div className={styles.tooltipTransmog}>
-            Transmogrified to:
-            <br />
-            {item.transmogText}
-          </div>
-        ) : null}
-        {item.bindingText ? <div className={styles.tooltipLine}>{item.bindingText}</div> : null}
-        <div className={styles.tooltipLine}>
-          <span>{item.slotName}</span>
-          {item.subclassName ? <span className={styles.tooltipRight}>{item.subclassName}</span> : null}
-        </div>
-        {item.stats.map((stat) => (
-          <div key={stat.text} className={stat.isBonus ? styles.tooltipStatBonus : styles.tooltipStatLine}>
-            {stat.text}
-          </div>
-        ))}
-        {item.enchantText ? <div className={styles.tooltipStatBonus}>{item.enchantText}</div> : null}
-        {item.durabilityText || item.requirementsText.length > 0 || item.sellPrice ? (
-          <div className={styles.tooltipDivider} />
-        ) : null}
-        {item.durabilityText ? <div className={styles.tooltipLine}>{item.durabilityText}</div> : null}
-        {item.requirementsText.map((text) => (
-          <div key={text} className={styles.tooltipLine}>
-            {text}
-          </div>
-        ))}
-        {item.sellPrice ? (
-          <div className={styles.tooltipLine}>
-            Sell Price: <span className={styles.gold}>{item.sellPrice.gold}</span>{" "}
-            <span className={styles.silver}>{item.sellPrice.silver}</span>{" "}
-            <span className={styles.copper}>{item.sellPrice.copper}</span>
-          </div>
-        ) : null}
+        <ItemTooltipContent item={item} />
       </div>
     </div>
   );
@@ -166,6 +165,59 @@ function GearColumn({ slots, gear }: { slots: ArmoryGearSlotKey[]; gear: Charact
   );
 }
 
+function WeaponIconBox({ item, slotKey }: { item: GearItemSummary | undefined; slotKey: ArmoryGearSlotKey }) {
+  if (!item) {
+    return (
+      <div className={styles.weaponIconWrap}>
+        <div className={styles.weaponIconEmpty} />
+        <div className={styles.tooltip}>
+          <div className={styles.tooltipEmptyLine}>{SLOT_DISPLAY_NAMES[slotKey]} (empty slot)</div>
+        </div>
+      </div>
+    );
+  }
+
+  const style = { "--q": qualityColorVar(item.qualityType) } as CSSProperties;
+
+  return (
+    <div className={styles.weaponIconWrap} style={style}>
+      {item.iconUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element -- external Blizzard-hosted image
+        <img src={proxiedImageUrl(item.iconUrl)} alt="" className={styles.weaponIcon} />
+      ) : null}
+      <div className={styles.tooltip}>
+        <ItemTooltipContent item={item} />
+      </div>
+    </div>
+  );
+}
+
+function WeaponSection({ gear }: { gear: CharacterSummary["gear"] }) {
+  const weapon = gear.weapon;
+  const offHand = gear.offHand;
+  const primary = weapon ?? offHand;
+
+  return (
+    <div className={styles.weaponSection}>
+      <div className={styles.weaponText}>
+        {primary ? (
+          <>
+            <span className={styles.weaponName} style={{ color: qualityColorVar(primary.qualityType) } as CSSProperties}>
+              {primary.name}
+            </span>
+            {primary.enchantText ? <span className={styles.weaponEnchant}>{primary.enchantText}</span> : null}
+          </>
+        ) : null}
+      </div>
+      {primary?.itemLevel ? <span className={styles.weaponLevel}>{primary.itemLevel}</span> : null}
+      <div className={styles.weaponIcons}>
+        <WeaponIconBox item={weapon} slotKey="weapon" />
+        <WeaponIconBox item={offHand} slotKey="offHand" />
+      </div>
+    </div>
+  );
+}
+
 export function OverviewTab({ character }: OverviewTabProps) {
   return (
     <div className={styles.grid}>
@@ -174,6 +226,7 @@ export function OverviewTab({ character }: OverviewTabProps) {
           <GearColumn slots={LEFT_SLOTS} gear={character.gear} />
           <GearColumn slots={RIGHT_SLOTS} gear={character.gear} />
         </div>
+        <WeaponSection gear={character.gear} />
       </div>
 
       <div className={styles.right}>

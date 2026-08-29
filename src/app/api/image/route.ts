@@ -35,11 +35,18 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // Item/mount/tier icons are keyed by a stable numeric ID and never change,
+  // so they're safe to cache hard. A character's avatar and full-body render
+  // sit under a `/character/` path and get *regenerated at the same URL*
+  // whenever gear/appearance changes — caching those long-term would show a
+  // stale portrait even after a hard refresh, so they get no caching at all.
+  const isCharacterRender = parsed.pathname.includes("/character/");
+
   return new NextResponse(response.body, {
     status: 200,
     headers: {
       "content-type": response.headers.get("content-type") ?? "application/octet-stream",
-      "cache-control": "public, max-age=86400, immutable",
+      "cache-control": isCharacterRender ? "no-store" : "public, max-age=86400, immutable",
     },
   });
 }
