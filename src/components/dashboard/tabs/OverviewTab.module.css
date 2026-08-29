@@ -146,6 +146,13 @@
   display: block;
 }
 
+/* The last row in each column sits at the bottom of the panel, so its
+   tooltip would otherwise open downward past the fold — open it upward. */
+.itemsColumn .itemRow:last-child .tooltip {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+
 .tooltipName {
   font-size: 14px;
   font-weight: 700;
@@ -280,13 +287,22 @@
   box-sizing: border-box;
 }
 
+/* The weapon row sits at the very bottom of the panel, so both its
+   tooltips always open upward instead of past the fold. */
 .weaponIconWrap .tooltip {
   left: auto;
   right: 0;
+  top: auto;
+  bottom: calc(100% + 4px);
 }
 
 .weaponIconWrap:hover .tooltip {
   display: block;
+}
+
+.weaponPrimary .tooltip {
+  top: auto;
+  bottom: calc(100% + 4px);
 }
 
 .weaponPrimary:hover .tooltip {
