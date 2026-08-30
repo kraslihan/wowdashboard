@@ -35,6 +35,11 @@
   --chrome-accent-gold: #e3a63e;
   --chrome-accent-blue: #4fa8e8;
 
+  /* Faction identity colors, distinct from the semantic status palette above
+     so a faction badge never reads as a good/bad status signal. */
+  --faction-alliance: #4fa8e8;
+  --faction-horde: #c1443b;
+
   --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 

@@ -1,14 +1,41 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { armoryApiUrl, type CharacterRef } from "@/lib/character";
 import { proxiedImageUrl } from "@/lib/imageProxy";
 import { useArmoryResource } from "@/lib/useArmoryResource";
 import { useFarmListMountIds } from "@/lib/useFarmListMountIds";
-import type { ArmoryMount, ArmoryMountsResponse } from "@/lib/armory/types";
+import type { CharacterSummary } from "@/lib/armory/characterSummary";
+import type { ArmoryMountsResponse } from "@/lib/armory/types";
+import { enrichMounts, gridImageUrl, detailImageUrl, type EnrichedMount, type MountFactionRestriction } from "@/lib/armory/mountReference";
+import {
+  calculateMountStats,
+  createEmptyFilterState,
+  factionLabel,
+  formatCount,
+  formatPercent,
+  getMountDisplayStatus,
+  isFilterStateEmpty,
+  isLegacyCollected,
+  matchesFilters,
+  matchesSearch,
+  matchesTab,
+  normalizeSearchText,
+  pluralize,
+  sortMounts,
+  sourceTypeLabel,
+  SORT_DEFS,
+  STATUS_LABELS,
+  TAB_DEFS,
+  type CharacterFactionSlug,
+  type CollectionTab,
+  type MountDisplayStatus,
+  type MountFilterState,
+  type SortOption,
+} from "@/lib/armory/mountCollection";
 import { AsyncBoundary } from "../AsyncBoundary";
-import { Modal } from "../Modal";
-import { CheckIcon, FilterIcon, SearchIcon, SortIcon, StarIcon } from "../icons";
+import { Drawer } from "../Drawer";
+import { CheckIcon, FilterIcon, ImageOffIcon, LockIcon, NoEntryIcon, SearchIcon, SortIcon, StarIcon } from "../icons";
 import styles from "./MountsTab.module.css";
 
 interface MountsTabProps {
@@ -16,48 +43,102 @@ interface MountsTabProps {
 }
 
 const PAGE_SIZE = 60;
+const UNKNOWN_SOURCE_KEY = "unknown";
+const FACTION_OPTIONS: MountFactionRestriction[] = ["alliance", "horde"];
 
-type MountFilter = "collected" | "missing" | "all";
-type SortOption = "name-asc" | "name-desc" | "collected";
+function MountImage({
+  candidates,
+  alt,
+  className,
+  placeholderClassName,
+}: {
+  candidates: (string | null)[];
+  alt: string;
+  className?: string;
+  placeholderClassName?: string;
+}) {
+  const validCandidates = useMemo(() => candidates.filter((url): url is string => Boolean(url)), [candidates]);
+  const [index, setIndex] = useState(0);
+  const src = index < validCandidates.length ? validCandidates[index] : null;
 
-const FILTER_DEFS: { id: MountFilter; label: string }[] = [
-  { id: "collected", label: "Collected" },
-  { id: "missing", label: "Missing" },
-  { id: "all", label: "All" },
-];
+  if (!src) {
+    return (
+      <div className={placeholderClassName} role="img" aria-label={alt}>
+        <ImageOffIcon />
+      </div>
+    );
+  }
 
-const SORT_DEFS: { id: SortOption; label: string }[] = [
-  { id: "name-asc", label: "Name A–Z" },
-  { id: "name-desc", label: "Name Z–A" },
-  { id: "collected", label: "Collected status" },
-];
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- external Blizzard-hosted image
+    <img
+      src={proxiedImageUrl(src)}
+      alt={alt}
+      loading="lazy"
+      className={className}
+      onError={() => setIndex((current) => current + 1)}
+    />
+  );
+}
 
-function sortMounts(list: ArmoryMount[], sort: SortOption | null): ArmoryMount[] {
-  if (!sort) return list;
-  const sorted = [...list];
-  if (sort === "name-asc") sorted.sort((a, b) => a.name.localeCompare(b.name));
-  else if (sort === "name-desc") sorted.sort((a, b) => b.name.localeCompare(a.name));
-  else sorted.sort((a, b) => Number(b.collected) - Number(a.collected) || a.name.localeCompare(b.name));
-  return sorted;
+function StatusBadge({ status, compact }: { status: MountDisplayStatus; compact?: boolean }) {
+  if (status === "collected") {
+    return (
+      <span className={`${styles.badge} ${styles.badgeCollected}`}>
+        <CheckIcon />
+        {!compact && STATUS_LABELS.collected}
+      </span>
+    );
+  }
+  if (status === "unobtainable") {
+    return (
+      <span className={`${styles.badge} ${styles.badgeUnobtainable}`}>
+        <LockIcon />
+        {!compact && STATUS_LABELS.unobtainable}
+      </span>
+    );
+  }
+  if (status === "wrong-faction") {
+    return (
+      <span className={`${styles.badge} ${styles.badgeWrongFaction}`}>
+        <NoEntryIcon />
+        {!compact && STATUS_LABELS["wrong-faction"]}
+      </span>
+    );
+  }
+  return null;
 }
 
 function MountCard({
   mount,
+  status,
+  legacy,
   isFavorite,
   onSelect,
   onToggleFavorite,
 }: {
-  mount: ArmoryMount;
+  mount: EnrichedMount;
+  status: MountDisplayStatus;
+  legacy: boolean;
   isFavorite: boolean;
   onSelect: () => void;
   onToggleFavorite: () => void;
 }) {
+  const caption =
+    status === "unobtainable"
+      ? STATUS_LABELS.unobtainable
+      : status === "wrong-faction"
+        ? `${factionLabel(mount.factionRestriction)} Only`
+        : legacy
+          ? "Legacy"
+          : null;
+
   return (
     <div
       className={styles.card}
       role="button"
       tabIndex={0}
-      data-collected={mount.collected}
+      data-status={status}
       onClick={onSelect}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
@@ -79,30 +160,63 @@ function MountCard({
         <StarIcon filled={isFavorite} />
       </button>
 
-      {mount.collected ? (
-        <span className={styles.collectedBadge} aria-label="Collected">
-          <CheckIcon />
+      {status !== "available" ? (
+        <span className={styles.cardStatus} title={`${mount.name}: ${STATUS_LABELS[status]}`}>
+          <StatusBadge status={status} compact />
+          <span className={styles.srOnly}>{STATUS_LABELS[status]}</span>
         </span>
       ) : null}
 
       <div className={styles.imageWrap}>
-        {/* eslint-disable-next-line @next/next/no-img-element -- external Blizzard-hosted image */}
-        <img src={proxiedImageUrl(mount.render.url)} alt={mount.name} loading="lazy" className={styles.image} />
+        <MountImage
+          candidates={[gridImageUrl(mount)]}
+          alt={mount.name}
+          className={styles.image}
+          placeholderClassName={styles.imagePlaceholder}
+        />
       </div>
       <span className={styles.name}>{mount.name}</span>
+      {caption ? <span className={styles.cardCaption}>{caption}</span> : null}
     </div>
   );
 }
 
-function MountsContent({ mounts }: { mounts: ArmoryMountsResponse }) {
+interface ActiveChip {
+  key: string;
+  label: string;
+  onRemove: () => void;
+}
+
+function MountsContent({
+  mountsResponse,
+  characterFaction,
+}: {
+  mountsResponse: ArmoryMountsResponse;
+  characterFaction: CharacterFactionSlug;
+}) {
+  const enriched = useMemo(() => enrichMounts(mountsResponse.mounts), [mountsResponse.mounts]);
+  const statusById = useMemo(() => {
+    const map = new Map<number, MountDisplayStatus>();
+    for (const mount of enriched) {
+      map.set(mount.id, getMountDisplayStatus(mount, characterFaction));
+    }
+    return map;
+  }, [enriched, characterFaction]);
+  const statusOf = useCallback(
+    (mount: EnrichedMount): MountDisplayStatus => statusById.get(mount.id) ?? "available",
+    [statusById],
+  );
+
+  const stats = useMemo(() => calculateMountStats(enriched, characterFaction), [enriched, characterFaction]);
+
+  const [tab, setTab] = useState<CollectionTab>("collected");
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<MountFilter>("collected");
-  const [sort, setSort] = useState<SortOption | null>(null);
-  const [farmListOnly, setFarmListOnly] = useState(false);
+  const [sort, setSort] = useState<SortOption>("name-asc");
+  const [filters, setFilters] = useState<MountFilterState>(() => createEmptyFilterState());
   const [filterOpen, setFilterOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  const [selectedMount, setSelectedMount] = useState<ArmoryMount | null>(null);
+  const [selectedMount, setSelectedMount] = useState<EnrichedMount | null>(null);
   const { farmListIds, toggleFarmListMount } = useFarmListMountIds();
 
   const filterRef = useRef<HTMLDivElement>(null);
@@ -128,77 +242,164 @@ function MountsContent({ mounts }: { mounts: ArmoryMountsResponse }) {
     };
   }, []);
 
-  const totalCount = mounts.mounts.length;
-  const collectedCount = mounts.mountsCollected;
-  const missingCount = totalCount - collectedCount;
-  const percentComplete = totalCount > 0 ? (collectedCount / totalCount) * 100 : 0;
-  const filterCounts: Record<MountFilter, number> = {
-    collected: collectedCount,
-    missing: missingCount,
-    all: totalCount,
-  };
+  const tabCounts = useMemo(() => {
+    const counts: Record<CollectionTab, number> = { all: 0, collected: 0, "to-collect": 0, unobtainable: 0 };
+    for (const mount of enriched) {
+      const status = statusOf(mount);
+      for (const def of TAB_DEFS) {
+        if (matchesTab(status, def.id)) counts[def.id] += 1;
+      }
+    }
+    return counts;
+  }, [enriched, statusOf]);
 
-  const byFilter = useMemo(() => {
-    if (filter === "collected") return mounts.mounts.filter((mount) => mount.collected);
-    if (filter === "missing") return mounts.mounts.filter((mount) => !mount.collected);
-    return mounts.mounts;
-  }, [mounts.mounts, filter]);
+  const availableSourceTypes = useMemo(() => {
+    const keys = new Set<string>();
+    for (const mount of enriched) keys.add(mount.sourceType ?? UNKNOWN_SOURCE_KEY);
+    return [...keys].sort((a, b) =>
+      sourceTypeLabel(a === UNKNOWN_SOURCE_KEY ? null : a).localeCompare(sourceTypeLabel(b === UNKNOWN_SOURCE_KEY ? null : b)),
+    );
+  }, [enriched]);
 
-  const byFarmList = useMemo(() => {
-    if (!farmListOnly) return byFilter;
-    return byFilter.filter((mount) => farmListIds.has(mount.id));
-  }, [byFilter, farmListOnly, farmListIds]);
-
-  const bySearch = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return q ? byFarmList.filter((mount) => mount.name.toLowerCase().includes(q)) : byFarmList;
-  }, [byFarmList, query]);
-
-  const filtered = useMemo(() => sortMounts(bySearch, sort), [bySearch, sort]);
-
+  const byTab = useMemo(() => enriched.filter((mount) => matchesTab(statusOf(mount), tab)), [enriched, statusOf, tab]);
+  const byFilters = useMemo(
+    () => byTab.filter((mount) => matchesFilters(mount, filters, farmListIds)),
+    [byTab, filters, farmListIds],
+  );
+  const normalizedQuery = useMemo(() => normalizeSearchText(query), [query]);
+  const searched = useMemo(() => byFilters.filter((mount) => matchesSearch(mount, normalizedQuery)), [byFilters, normalizedQuery]);
+  const filtered = useMemo(() => sortMounts(searched, sort, statusOf), [searched, sort, statusOf]);
   const visible = filtered.slice(0, visibleCount);
 
-  function handleFilterChange(next: MountFilter) {
-    setFilter(next);
+  const activeChips = useMemo<ActiveChip[]>(() => {
+    const chips: ActiveChip[] = [];
+    if (query) {
+      chips.push({ key: "query", label: `Search: "${query}"`, onRemove: () => setQuery("") });
+    }
+    for (const sourceType of filters.sourceTypes) {
+      chips.push({
+        key: `source-${sourceType}`,
+        label: sourceTypeLabel(sourceType === UNKNOWN_SOURCE_KEY ? null : sourceType),
+        onRemove: () =>
+          setFilters((prev) => {
+            const next = new Set(prev.sourceTypes);
+            next.delete(sourceType);
+            return { ...prev, sourceTypes: next };
+          }),
+      });
+    }
+    for (const faction of filters.factions) {
+      chips.push({
+        key: `faction-${faction}`,
+        label: factionLabel(faction),
+        onRemove: () =>
+          setFilters((prev) => {
+            const next = new Set(prev.factions);
+            next.delete(faction);
+            return { ...prev, factions: next };
+          }),
+      });
+    }
+    if (filters.farmListOnly) {
+      chips.push({ key: "farm-list", label: "Farm List", onRemove: () => setFilters((prev) => ({ ...prev, farmListOnly: false })) });
+    }
+    return chips;
+  }, [query, filters]);
+
+  function resetPagination() {
     setVisibleCount(PAGE_SIZE);
   }
 
+  function handleTabChange(next: CollectionTab) {
+    setTab(next);
+    resetPagination();
+  }
+
+  function toggleSourceTypeFilter(sourceType: string) {
+    setFilters((prev) => {
+      const next = new Set(prev.sourceTypes);
+      if (next.has(sourceType)) next.delete(sourceType);
+      else next.add(sourceType);
+      return { ...prev, sourceTypes: next };
+    });
+    resetPagination();
+  }
+
+  function toggleFactionFilter(faction: MountFactionRestriction) {
+    setFilters((prev) => {
+      const next = new Set(prev.factions);
+      if (next.has(faction)) next.delete(faction);
+      else next.add(faction);
+      return { ...prev, factions: next };
+    });
+    resetPagination();
+  }
+
+  function clearAllFilters() {
+    setFilters(createEmptyFilterState());
+    setQuery("");
+    resetPagination();
+  }
+
+  const selectedStatus = selectedMount ? statusOf(selectedMount) : null;
+  const selectedLegacy = selectedMount ? isLegacyCollected(selectedMount) : false;
+
   return (
     <div className={styles.wrap}>
-      <div className={styles.summary}>
-        <div className={styles.summaryStats}>
-          <span>
-            <span className={styles.summaryCollected}>{collectedCount.toLocaleString()}</span> Collected
-          </span>
-          <span className={styles.summaryDot}>•</span>
-          <span>
-            <span className={styles.summaryMissing}>{missingCount.toLocaleString()}</span> Missing
-          </span>
-          <span className={styles.summaryDot}>•</span>
-          <span>
-            <span className={styles.summaryPercent}>{percentComplete.toFixed(1)}%</span> Complete
-          </span>
+      <div className={styles.header}>
+        <h2 className={styles.title}>Mount Collection</h2>
+        <p className={styles.subtitle}>
+          Every mount your character can collect, cross-referenced against known sources and obtainability so you know exactly
+          what&apos;s still worth chasing.
+        </p>
+      </div>
+
+      <div className={styles.progressCard}>
+        <div className={styles.progressHeader}>
+          <span className={styles.progressPercent}>{formatPercent(stats.completionRate)}</span>
+          <span className={styles.progressLabel}>of collectible mounts obtained</span>
         </div>
         <div className={styles.progressTrack}>
-          <div className={styles.progressFill} style={{ width: `${percentComplete}%` }} />
+          <div className={styles.progressFill} style={{ width: `${stats.completionRate * 100}%` }} />
         </div>
       </div>
 
-      <div className={styles.controls}>
-        <div className={styles.filterGroup} role="group" aria-label="Filter mounts">
-          {FILTER_DEFS.map((f) => (
-            <button
-              key={f.id}
-              type="button"
-              className={styles.filterButton}
-              data-active={filter === f.id}
-              onClick={() => handleFilterChange(f.id)}
-            >
-              {f.label} <span className={styles.filterCount}>{filterCounts[f.id].toLocaleString()}</span>
-            </button>
-          ))}
+      <div className={styles.statGrid}>
+        <div className={styles.statCard}>
+          <span className={styles.statValue}>{formatCount(stats.totalMounts)}</span>
+          <span className={styles.statLabel}>{pluralize(stats.totalMounts, "Total Mount", "Total Mounts")}</span>
         </div>
+        <div className={styles.statCard}>
+          <span className={`${styles.statValue} ${styles.statValueGood}`}>{formatCount(stats.collectedMounts)}</span>
+          <span className={styles.statLabel}>Collected</span>
+        </div>
+        <div className={styles.statCard}>
+          <span className={`${styles.statValue} ${styles.statValueGold}`}>{formatCount(stats.availableToCollect)}</span>
+          <span className={styles.statLabel}>Available to Collect</span>
+        </div>
+        <div className={styles.statCard}>
+          <span className={`${styles.statValue} ${styles.statValueMuted}`}>{formatCount(stats.unobtainableMounts)}</span>
+          <span className={styles.statLabel}>Unobtainable</span>
+        </div>
+      </div>
 
+      <div className={styles.tabGroup} role="tablist" aria-label="Collection status">
+        {TAB_DEFS.map((def) => (
+          <button
+            key={def.id}
+            type="button"
+            role="tab"
+            aria-selected={tab === def.id}
+            className={styles.tabButton}
+            data-active={tab === def.id}
+            onClick={() => handleTabChange(def.id)}
+          >
+            {def.label} <span className={styles.tabCount}>{formatCount(tabCounts[def.id])}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className={styles.controls}>
         <div className={styles.searchWrap}>
           <SearchIcon className={styles.searchIcon} />
           <input
@@ -207,7 +408,7 @@ function MountsContent({ mounts }: { mounts: ArmoryMountsResponse }) {
             value={query}
             onChange={(event) => {
               setQuery(event.target.value);
-              setVisibleCount(PAGE_SIZE);
+              resetPagination();
             }}
             className={styles.search}
           />
@@ -217,7 +418,7 @@ function MountsContent({ mounts }: { mounts: ArmoryMountsResponse }) {
               className={styles.clearButton}
               onClick={() => {
                 setQuery("");
-                setVisibleCount(PAGE_SIZE);
+                resetPagination();
               }}
               aria-label="Clear search"
             >
@@ -230,7 +431,7 @@ function MountsContent({ mounts }: { mounts: ArmoryMountsResponse }) {
           <button
             type="button"
             className={styles.dropdownTrigger}
-            data-active={farmListOnly}
+            data-active={!isFilterStateEmpty(filters)}
             aria-expanded={filterOpen}
             onClick={() => {
               setFilterOpen((open) => !open);
@@ -242,16 +443,39 @@ function MountsContent({ mounts }: { mounts: ArmoryMountsResponse }) {
           </button>
           {filterOpen ? (
             <div className={styles.dropdownPanel}>
+              <span className={styles.dropdownGroupLabel}>Source Type</span>
+              <div className={styles.dropdownScrollGroup}>
+                {availableSourceTypes.map((sourceType) => (
+                  <label key={sourceType} className={styles.dropdownCheckOption}>
+                    <input
+                      type="checkbox"
+                      checked={filters.sourceTypes.has(sourceType)}
+                      onChange={() => toggleSourceTypeFilter(sourceType)}
+                    />
+                    {sourceTypeLabel(sourceType === UNKNOWN_SOURCE_KEY ? null : sourceType)}
+                  </label>
+                ))}
+              </div>
+
+              <span className={styles.dropdownGroupLabel}>Faction</span>
+              {FACTION_OPTIONS.map((faction) => (
+                <label key={faction} className={styles.dropdownCheckOption}>
+                  <input type="checkbox" checked={filters.factions.has(faction)} onChange={() => toggleFactionFilter(faction)} />
+                  {factionLabel(faction)}
+                </label>
+              ))}
+
+              <span className={styles.dropdownGroupLabel}>Other</span>
               <label className={styles.dropdownCheckOption}>
                 <input
                   type="checkbox"
-                  checked={farmListOnly}
+                  checked={filters.farmListOnly}
                   onChange={(event) => {
-                    setFarmListOnly(event.target.checked);
-                    setVisibleCount(PAGE_SIZE);
+                    setFilters((prev) => ({ ...prev, farmListOnly: event.target.checked }));
+                    resetPagination();
                   }}
                 />
-                Farm List
+                Farm List only
               </label>
             </div>
           ) : null}
@@ -261,7 +485,6 @@ function MountsContent({ mounts }: { mounts: ArmoryMountsResponse }) {
           <button
             type="button"
             className={styles.dropdownTrigger}
-            data-active={sort !== null}
             aria-expanded={sortOpen}
             onClick={() => {
               setSortOpen((open) => !open);
@@ -292,14 +515,34 @@ function MountsContent({ mounts }: { mounts: ArmoryMountsResponse }) {
         </div>
       </div>
 
+      {activeChips.length > 0 ? (
+        <div className={styles.chipRow}>
+          {activeChips.map((chip) => (
+            <button key={chip.key} type="button" className={styles.chip} onClick={chip.onRemove}>
+              {chip.label}
+              <span aria-hidden="true"> ×</span>
+            </button>
+          ))}
+          <button type="button" className={styles.chipClear} onClick={clearAllFilters}>
+            Clear all
+          </button>
+        </div>
+      ) : null}
+
       {filtered.length === 0 ? (
-        <p className={styles.empty}>No mounts match this filter.</p>
+        <p className={styles.empty}>
+          {tab === "collected"
+            ? "You haven't collected any mounts in this view yet."
+            : "No mounts match your search and filters."}
+        </p>
       ) : (
         <div className={styles.grid}>
           {visible.map((mount) => (
             <MountCard
               key={mount.id}
               mount={mount}
+              status={statusOf(mount)}
+              legacy={isLegacyCollected(mount)}
               isFavorite={farmListIds.has(mount.id)}
               onSelect={() => setSelectedMount(mount)}
               onToggleFavorite={() => toggleFarmListMount(mount.id)}
@@ -309,38 +552,84 @@ function MountsContent({ mounts }: { mounts: ArmoryMountsResponse }) {
       )}
 
       {visibleCount < filtered.length ? (
-        <button
-          type="button"
-          className={styles.loadMore}
-          onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}
-        >
-          Load more ({filtered.length - visibleCount} remaining)
+        <button type="button" className={styles.loadMore} onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}>
+          Load more ({formatCount(filtered.length - visibleCount)} remaining)
         </button>
       ) : null}
 
-      {selectedMount ? (
-        <Modal onClose={() => setSelectedMount(null)}>
-          <h2 className={styles.detailName}>{selectedMount.name}</h2>
-          {!selectedMount.collected ? <span className={styles.detailMissing}>Not Collected</span> : null}
+      {selectedMount && selectedStatus ? (
+        <Drawer onClose={() => setSelectedMount(null)} titleId="mount-detail-name">
+          <h2 id="mount-detail-name" className={styles.detailName}>
+            {selectedMount.name}
+          </h2>
+
+          <div className={styles.detailBadgeRow}>
+            <StatusBadge status={selectedStatus} />
+            {selectedLegacy ? <span className={`${styles.badge} ${styles.badgeLegacy}`}>Legacy</span> : null}
+          </div>
+
           <div className={styles.detailImageWrap}>
-            {/* eslint-disable-next-line @next/next/no-img-element -- external Blizzard-hosted image */}
-            <img
-              src={proxiedImageUrl(selectedMount.render.url)}
+            <MountImage
+              candidates={[detailImageUrl(selectedMount)]}
               alt={selectedMount.name}
               className={styles.detailImage}
+              placeholderClassName={styles.detailImagePlaceholder}
             />
           </div>
-        </Modal>
+
+          <dl className={styles.detailFacts}>
+            <div className={styles.detailFact}>
+              <dt>Source</dt>
+              <dd>{sourceTypeLabel(selectedMount.sourceType)}</dd>
+            </div>
+            {selectedMount.sourceName ? (
+              <div className={styles.detailFact}>
+                <dt>Details</dt>
+                <dd>{selectedMount.sourceName}</dd>
+              </div>
+            ) : null}
+            {selectedMount.sourceZone ? (
+              <div className={styles.detailFact}>
+                <dt>Zone</dt>
+                <dd>{selectedMount.sourceZone}</dd>
+              </div>
+            ) : null}
+            {selectedMount.factionRestriction ? (
+              <div className={styles.detailFact}>
+                <dt>Faction</dt>
+                <dd data-faction={selectedMount.factionRestriction}>{factionLabel(selectedMount.factionRestriction)} Only</dd>
+              </div>
+            ) : null}
+          </dl>
+
+          <button
+            type="button"
+            className={styles.detailFavoriteButton}
+            data-active={farmListIds.has(selectedMount.id)}
+            onClick={() => toggleFarmListMount(selectedMount.id)}
+          >
+            <StarIcon filled={farmListIds.has(selectedMount.id)} />
+            {farmListIds.has(selectedMount.id) ? "On Farm List" : "Add to Farm List"}
+          </button>
+        </Drawer>
       ) : null}
     </div>
   );
 }
 
 export function MountsTab({ characterRef }: MountsTabProps) {
-  const { data, loading, error } = useArmoryResource<ArmoryMountsResponse>(armoryApiUrl("mounts", characterRef));
+  const mounts = useArmoryResource<ArmoryMountsResponse>(armoryApiUrl("mounts", characterRef));
+  const character = useArmoryResource<CharacterSummary>(armoryApiUrl("character", characterRef));
+
+  const loading = mounts.loading || character.loading;
+  const error = mounts.error ?? character.error;
+  const data = mounts.data && character.data ? { mounts: mounts.data, character: character.data } : null;
+
   return (
     <AsyncBoundary loading={loading} error={error} data={data}>
-      {(mounts) => <MountsContent mounts={mounts} />}
+      {({ mounts, character }) => (
+        <MountsContent mountsResponse={mounts} characterFaction={character.faction.slug as CharacterFactionSlug} />
+      )}
     </AsyncBoundary>
   );
 }
