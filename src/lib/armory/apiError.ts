@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { ArmoryFetchError, ArmoryParseError } from "./errors";
+import { FarmListError } from "./farmListService";
 
 export function armoryErrorResponse(error: unknown): NextResponse {
+  if (error instanceof FarmListError) {
+    return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+  }
   if (error instanceof ArmoryFetchError) {
     const status = error.status === 404 ? 404 : 502;
     return NextResponse.json({ error: error.message }, { status });

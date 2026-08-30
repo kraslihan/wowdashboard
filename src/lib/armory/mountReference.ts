@@ -4,7 +4,7 @@
 // mountsDatabase.json. Joined onto the live `ArmoryMount[]` by numeric id.
 
 import mountsDatabaseRaw from "./mountsDatabase.json";
-import type { ArmoryMount } from "./types";
+import type { ArmoryMountWithFarmList } from "./types";
 
 export type MountFactionRestriction = "alliance" | "horde";
 
@@ -29,7 +29,7 @@ const mountReferenceById = new Map<number, MountReferenceEntry>(mountsDatabase.m
 // practice — the database was built from the live list — but a new mount
 // could ship before the database is refreshed) simply get null/false
 // defaults rather than throwing.
-export interface EnrichedMount extends ArmoryMount {
+export interface EnrichedMount extends ArmoryMountWithFarmList {
   thumbUrl: string | null;
   mountUrl: string | null;
   unobtainable: boolean;
@@ -39,7 +39,7 @@ export interface EnrichedMount extends ArmoryMount {
   factionRestriction: MountFactionRestriction | null;
 }
 
-export function enrichMount(mount: ArmoryMount): EnrichedMount {
+export function enrichMount(mount: ArmoryMountWithFarmList): EnrichedMount {
   const ref = mountReferenceById.get(mount.id);
   return {
     ...mount,
@@ -53,8 +53,16 @@ export function enrichMount(mount: ArmoryMount): EnrichedMount {
   };
 }
 
-export function enrichMounts(mounts: ArmoryMount[]): EnrichedMount[] {
+export function enrichMounts(mounts: ArmoryMountWithFarmList[]): EnrichedMount[] {
   return mounts.map(enrichMount);
+}
+
+// Used server-side (e.g. Farm List add validation) where only the
+// obtainability flag is needed, without enriching a full ArmoryMount.
+// Mounts absent from the reference database default to obtainable, same as
+// enrichMount's fallback.
+export function isMountUnobtainable(mountId: number): boolean {
+  return mountReferenceById.get(mountId)?.unobtainable ?? false;
 }
 
 // Grid thumbnails favor the small, purpose-cropped image; the detail view

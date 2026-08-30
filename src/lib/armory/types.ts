@@ -220,6 +220,18 @@ export interface ArmoryMountsResponse {
   mountsCollected: number;
 }
 
+// The mounts BFF endpoint's actual response shape: Blizzard's raw per-mount
+// data plus the server-computed Farm List membership flag (joined from
+// farm_list_entries — see farmListService.reconcileAndAnnotateFarmList).
+export interface ArmoryMountWithFarmList extends ArmoryMount {
+  inFarmList: boolean;
+}
+
+export interface ArmoryMountsResponseWithFarmList {
+  mounts: ArmoryMountWithFarmList[];
+  mountsCollected: number;
+}
+
 // reputation.json
 export interface ArmoryReputationStandingType {
   id?: number;

@@ -16,3 +16,8 @@ export type ArmoryService = "character" | "pvp" | "achievements" | "mounts" | "r
 export function armoryApiUrl(service: ArmoryService, ref: CharacterRef): string {
   return `/api/${service}/${ref.region}/${ref.realmSlug}/${ref.characterName}`;
 }
+
+export function farmListApiUrl(ref: CharacterRef, mountId?: number): string {
+  const base = `/api/farm-list/${ref.region}/${ref.realmSlug}/${ref.characterName}`;
+  return mountId === undefined ? base : `${base}/${mountId}`;
+}

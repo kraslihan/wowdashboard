@@ -88,3 +88,14 @@ export function prefetchArmoryResource(url: string): void {
     // retry and surface the error normally if/when the user visits it.
   });
 }
+
+// Drops a URL's cached response so the next mount of a useArmoryResource
+// subscriber for it fetches fresh data instead of reusing stale cache.
+// Clearing the cache alone doesn't nudge an already-mounted subscriber to
+// refetch (its effect only re-runs when the `url` argument changes) — pair
+// this with remounting that subscriber (e.g. a changed React `key`) when a
+// background write (like the Farm List migration) needs its result reflected
+// immediately instead of on the next natural navigation.
+export function invalidateArmoryResource(url: string): void {
+  cache.delete(url);
+}

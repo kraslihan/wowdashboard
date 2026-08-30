@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { armoryApiUrl, type CharacterRef } from "@/lib/character";
+import { migrateLegacyFarmListOnce } from "@/lib/farmListMigration";
 import { proxiedImageUrl } from "@/lib/imageProxy";
-import { useArmoryResource } from "@/lib/useArmoryResource";
-import { useFarmListMountIds } from "@/lib/useFarmListMountIds";
-import type { ArmoryMountsResponse } from "@/lib/armory/types";
+import { invalidateArmoryResource, useArmoryResource } from "@/lib/useArmoryResource";
+import { useFarmListMutations } from "@/lib/useFarmListMutations";
+import type { ArmoryMountsResponseWithFarmList } from "@/lib/armory/types";
 import { enrichMounts, gridImageUrl, detailImageUrl, type EnrichedMount, type MountFactionRestriction } from "@/lib/armory/mountReference";
 import {
   calculateMountStats,
@@ -108,6 +109,7 @@ function MountCard({
   legacy,
   farmEligibility,
   isFavorite,
+  favoritePending,
   onSelect,
   onToggleFavorite,
 }: {
@@ -116,6 +118,7 @@ function MountCard({
   legacy: boolean;
   farmEligibility: FarmListEligibility;
   isFavorite: boolean;
+  favoritePending: boolean;
   onSelect: () => void;
   onToggleFavorite: () => void;
 }) {
@@ -147,6 +150,7 @@ function MountCard({
           type="button"
           className={styles.favoriteButton}
           data-active={isFavorite}
+          disabled={favoritePending}
           onClick={(event) => {
             event.stopPropagation();
             onToggleFavorite();
@@ -191,7 +195,13 @@ interface ActiveChip {
   onRemove: () => void;
 }
 
-function MountsContent({ mountsResponse }: { mountsResponse: ArmoryMountsResponse }) {
+function MountsContent({
+  mountsResponse,
+  characterRef,
+}: {
+  mountsResponse: ArmoryMountsResponseWithFarmList;
+  characterRef: CharacterRef;
+}) {
   const enriched = useMemo(() => enrichMounts(mountsResponse.mounts), [mountsResponse.mounts]);
   const statusById = useMemo(() => {
     const map = new Map<number, MountDisplayStatus>();
@@ -207,7 +217,13 @@ function MountsContent({ mountsResponse }: { mountsResponse: ArmoryMountsRespons
 
   const stats = useMemo(() => calculateMountStats(enriched), [enriched]);
 
-  const { farmListIds, toggleFarmListMount } = useFarmListMountIds();
+  const { isInFarmList, isPending: isFarmListPending, addToFarmList, removeFromFarmList, error: farmListError, clearError: clearFarmListError } =
+    useFarmListMutations(characterRef);
+  const farmListIds = useMemo(() => new Set(enriched.filter(isInFarmList).map((mount) => mount.id)), [enriched, isInFarmList]);
+  const toggleFarmListMount = useCallback(
+    (mount: EnrichedMount) => (isInFarmList(mount) ? removeFromFarmList(mount.id) : addToFarmList(mount.id)),
+    [isInFarmList, addToFarmList, removeFromFarmList],
+  );
   const farmEligibilityById = useMemo(() => {
     const map = new Map<number, FarmListEligibility>();
     for (const mount of enriched) {
@@ -576,8 +592,9 @@ function MountsContent({ mountsResponse }: { mountsResponse: ArmoryMountsRespons
                 legacy={isLegacyCollected(mount)}
                 farmEligibility={farmEligibilityOf(mount)}
                 isFavorite={farmListIds.has(mount.id)}
+                favoritePending={isFarmListPending(mount.id)}
                 onSelect={() => setSelectedMount(mount)}
-                onToggleFavorite={() => toggleFarmListMount(mount.id)}
+                onToggleFavorite={() => toggleFarmListMount(mount)}
               />
             ))}
           </div>
@@ -633,7 +650,13 @@ function MountsContent({ mountsResponse }: { mountsResponse: ArmoryMountsRespons
       )}
 
       {selectedMount && selectedStatus && selectedFarmEligibility ? (
-        <Drawer onClose={() => setSelectedMount(null)} titleId="mount-detail-name">
+        <Drawer
+          onClose={() => {
+            setSelectedMount(null);
+            clearFarmListError();
+          }}
+          titleId="mount-detail-name"
+        >
           <h2 id="mount-detail-name" className={styles.detailName}>
             {selectedMount.name}
           </h2>
@@ -695,10 +718,11 @@ function MountsContent({ mountsResponse }: { mountsResponse: ArmoryMountsRespons
                 type="button"
                 className={styles.detailFavoriteButton}
                 data-active
-                onClick={() => toggleFarmListMount(selectedMount.id)}
+                disabled={isFarmListPending(selectedMount.id)}
+                onClick={() => toggleFarmListMount(selectedMount)}
               >
                 <StarIcon filled />
-                Remove from Farm List
+                {isFarmListPending(selectedMount.id) ? "Removing…" : "Remove from Farm List"}
               </button>
             </>
           ) : selectedFarmEligibility === "addable" ? (
@@ -709,10 +733,11 @@ function MountsContent({ mountsResponse }: { mountsResponse: ArmoryMountsRespons
               <button
                 type="button"
                 className={styles.detailFavoriteButton}
-                onClick={() => toggleFarmListMount(selectedMount.id)}
+                disabled={isFarmListPending(selectedMount.id)}
+                onClick={() => toggleFarmListMount(selectedMount)}
               >
                 <StarIcon />
-                Add to Farm List
+                {isFarmListPending(selectedMount.id) ? "Adding…" : "Add to Farm List"}
               </button>
             </>
           ) : selectedFarmEligibility === "collected" ? (
@@ -722,18 +747,51 @@ function MountsContent({ mountsResponse }: { mountsResponse: ArmoryMountsRespons
               This mount can no longer be obtained, so it can&apos;t be added to your Farm List.
             </p>
           )}
+          {farmListError ? (
+            <p className={styles.detailFarmListError} role="alert">
+              {farmListError}
+            </p>
+          ) : null}
         </Drawer>
       ) : null}
     </div>
   );
 }
 
-export function MountsTab({ characterRef }: MountsTabProps) {
-  const { data, loading, error } = useArmoryResource<ArmoryMountsResponse>(armoryApiUrl("mounts", characterRef));
+function MountsFetcher({ characterRef }: { characterRef: CharacterRef }) {
+  const { data, loading, error } = useArmoryResource<ArmoryMountsResponseWithFarmList>(armoryApiUrl("mounts", characterRef));
 
   return (
     <AsyncBoundary loading={loading} error={error} data={data}>
-      {(mounts) => <MountsContent mountsResponse={mounts} />}
+      {(mounts) => <MountsContent mountsResponse={mounts} characterRef={characterRef} />}
     </AsyncBoundary>
   );
+}
+
+export function MountsTab({ characterRef }: MountsTabProps) {
+  // One-time legacy localStorage -> database migration. Its effect on the
+  // mounts response (newly in_farm_list mounts) only shows up if the mounts
+  // resource is fetched *after* migration finishes — bumping remountKey
+  // remounts MountsFetcher (and so its useArmoryResource call) exactly
+  // once, only when something was actually migrated, after
+  // invalidateArmoryResource has dropped the stale cache entry.
+  const [remountKey, setRemountKey] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    migrateLegacyFarmListOnce(characterRef).then((migratedAny) => {
+      if (cancelled || !migratedAny) return;
+      invalidateArmoryResource(armoryApiUrl("mounts", characterRef));
+      setRemountKey((key) => key + 1);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // characterRef is a stable module-level constant today (no character
+    // switcher yet); re-running this on identity change is still correct
+    // once one exists.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [characterRef.region, characterRef.realmSlug, characterRef.characterName]);
+
+  return <MountsFetcher key={remountKey} characterRef={characterRef} />;
 }
