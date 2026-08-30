@@ -310,6 +310,17 @@ function MountsContent({
     setPage(pageResult.page);
   }
 
+  // Wrong-faction mounts never carry status "available"/"collected"/
+  // "unobtainable" (only "wrong-faction", which only the All tab shows), so
+  // a Faction filter selecting only the *other* faction can never match
+  // anything outside All — not a bug, but worth explaining instead of just
+  // showing a generic "no matches" message.
+  const otherFactionOnlyFilterOnNonAllTab = useMemo(() => {
+    if (tab === "all" || filters.factions.size === 0 || filters.factions.has(characterFaction)) return null;
+    const [first] = filters.factions;
+    return first ?? null;
+  }, [tab, filters.factions, characterFaction]);
+
   const activeChips = useMemo<ActiveChip[]>(() => {
     const chips: ActiveChip[] = [];
     if (query) {
@@ -573,13 +584,15 @@ function MountsContent({
         <p className={styles.empty}>
           {query
             ? "No mounts match your search."
-            : !isFilterStateEmpty(filters)
-              ? "No mounts match your filters."
-              : tab === "collected"
-                ? "You haven't collected any mounts in this view yet."
-                : tab === "unobtainable"
-                  ? "No unobtainable mounts here — nothing to show."
-                  : "No mounts match this view."}
+            : otherFactionOnlyFilterOnNonAllTab
+              ? `${factionLabel(otherFactionOnlyFilterOnNonAllTab)} mounts can't be collected by your ${factionLabel(characterFaction)} character, so they only show up under the All tab.`
+              : !isFilterStateEmpty(filters)
+                ? "No mounts match your filters."
+                : tab === "collected"
+                  ? "You haven't collected any mounts in this view yet."
+                  : tab === "unobtainable"
+                    ? "No unobtainable mounts here — nothing to show."
+                    : "No mounts match this view."}
         </p>
       ) : (
         <>

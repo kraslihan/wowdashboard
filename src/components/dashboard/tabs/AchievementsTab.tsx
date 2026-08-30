@@ -42,7 +42,10 @@ function CategoryCard({ category, scoring }: { category: ArmoryAchievementCatego
           {(category.points ?? 0).toLocaleString()}
         </span>
       ) : (
-        <span className={styles.noPoints}>No Achievement Points</span>
+        <>
+          <span className={styles.earnedCount}>{category.count.toLocaleString()} earned</span>
+          <span className={styles.noPoints}>No Achievement Points</span>
+        </>
       )}
     </div>
   );

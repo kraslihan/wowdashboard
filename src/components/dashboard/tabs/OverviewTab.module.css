@@ -201,6 +201,14 @@
   bottom: calc(100% + 4px);
 }
 
+/* The whole Weapons section sits at the very bottom of the panel, so every
+   row in it (not just the last one) needs its tooltip opening upward or it
+   spills past the page instead of staying visible. */
+.weaponSection .itemRow .tooltip {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+
 .tooltipName {
   font-size: 14px;
   font-weight: 700;
