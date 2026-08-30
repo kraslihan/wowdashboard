@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import type { CharacterSummary } from "@/lib/armory/characterSummary";
 import type { DashboardTabId } from "@/lib/dashboardTabs";
 import { proxiedImageUrl } from "@/lib/imageProxy";
-import { CrossedSwordsIcon, ShieldIcon } from "./icons";
+import { CrossedSwordsIcon, FactionEmblem, ShieldIcon } from "./icons";
 import styles from "./CharacterHeader.module.css";
 
 interface CharacterHeaderProps {
@@ -85,7 +85,9 @@ export function CharacterHeader({ character, activeTab }: CharacterHeaderProps) 
                 role="img"
                 aria-label={`${FACTION_LABELS[factionSlug]} character`}
                 title={`${FACTION_LABELS[factionSlug]} character`}
-              />
+              >
+                <FactionEmblem faction={factionSlug} />
+              </span>
             ) : null}
           </div>
           {metaLine ? <span className={styles.metaLine}>{metaLine}</span> : null}

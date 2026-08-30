@@ -60,18 +60,17 @@
 }
 
 .factionMark {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
   flex-shrink: 0;
 }
 
 .factionMark[data-faction="alliance"] {
-  background: var(--faction-alliance);
+  color: var(--faction-alliance);
 }
 
 .factionMark[data-faction="horde"] {
-  background: var(--faction-horde);
+  color: var(--faction-horde);
 }
 
 .metaLine {

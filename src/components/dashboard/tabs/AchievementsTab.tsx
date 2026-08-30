@@ -12,12 +12,22 @@ interface AchievementsTabProps {
   characterRef: CharacterRef;
 }
 
-function CategoryCard({ category }: { category: ArmoryAchievementCategory }) {
+// Feats of Strength and Legacy are real Blizzard categories the character
+// has progress in, but Blizzard never counts them toward Achievement
+// Points — the API reflects that by returning `points`/`total` as null for
+// them, unlike every scoring category. Grouping on that null, rather than a
+// hardcoded slug list, keeps this correct if the API adds another
+// non-scoring category later.
+function isScoringCategory(category: ArmoryAchievementCategory): boolean {
+  return typeof category.points === "number";
+}
+
+function CategoryCard({ category, scoring }: { category: ArmoryAchievementCategory; scoring: boolean }) {
   const hasTotal = typeof category.total === "number" && category.total > 0;
   const pct = hasTotal ? Math.round((category.count / (category.total as number)) * 100) : null;
 
   return (
-    <div className={styles.card}>
+    <div className={scoring ? styles.card : `${styles.card} ${styles.cardSpecial}`}>
       {hasTotal ? (
         <div className={styles.ring} style={{ "--pct": pct } as CSSProperties}>
           <span className={styles.ringValue}>{pct}%</span>
@@ -26,20 +36,47 @@ function CategoryCard({ category }: { category: ArmoryAchievementCategory }) {
         <LaurelShieldIcon className={styles.laurel} />
       )}
       <span className={styles.name}>{category.name}</span>
-      <span className={styles.points}>
-        <ShieldIcon className={styles.pointIcon} />
-        {(category.points ?? category.count).toLocaleString()}
-      </span>
+      {scoring ? (
+        <span className={styles.points}>
+          <ShieldIcon className={styles.pointIcon} />
+          {(category.points ?? 0).toLocaleString()}
+        </span>
+      ) : (
+        <span className={styles.noPoints}>No Achievement Points</span>
+      )}
     </div>
   );
 }
 
 function AchievementsContent({ categories }: { categories: ArmoryAchievementCategory[] }) {
+  const scoringCategories = categories.filter(isScoringCategory);
+  const specialCategories = categories.filter((category) => !isScoringCategory(category));
+
   return (
-    <div className={styles.grid}>
-      {categories.map((category) => (
-        <CategoryCard key={category.slug} category={category} />
-      ))}
+    <div className={styles.wrap}>
+      <div className={styles.sectionHeader}>
+        <h2 className={styles.sectionTitle}>Achievement Point Categories</h2>
+        <p className={styles.sectionSubtitle}>These categories contribute to your total Achievement Points.</p>
+      </div>
+      <div className={styles.grid}>
+        {scoringCategories.map((category) => (
+          <CategoryCard key={category.slug} category={category} scoring />
+        ))}
+      </div>
+
+      {specialCategories.length > 0 ? (
+        <>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>Special Categories</h2>
+            <p className={styles.sectionSubtitle}>These categories do not contribute to your Achievement Points.</p>
+          </div>
+          <div className={styles.grid}>
+            {specialCategories.map((category) => (
+              <CategoryCard key={category.slug} category={category} scoring={false} />
+            ))}
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }

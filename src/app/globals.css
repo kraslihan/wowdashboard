@@ -4,13 +4,19 @@
 :root {
   color-scheme: dark;
 
-  --surface-page: #171717;
-  --surface-1: #171717;
-  --surface-2: #171717;
+  /* Layered surfaces: each step up is a visibly distinct shade, so a card
+     actually separates from the page and a nested tile separates from its
+     card, instead of every layer sharing one flat black. */
+  --surface-page: #131313;
+  --surface-1: #1a1a1a;
+  --surface-2: #212121;
+  --surface-elevated: #262624;
+  --surface-hover: #2a2a28;
   --text-primary: #f5f3ef;
   --text-secondary: #c9c4ba;
   --text-muted: #a39d92;
   --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.18);
   --gridline: #2c2822;
 
   --accent: #3987e5;
@@ -22,6 +28,8 @@
   --status-serious: #ec835a;
   --status-critical: #d03b3b;
   --success-text: #0ca30c;
+  --purple: #a77bd8;
+  --cyan: #50b8c7;
 
   /* Blizzard's own item-quality colors, not part of the categorical palette:
      used because WoW players already read these colors as quality by convention. */

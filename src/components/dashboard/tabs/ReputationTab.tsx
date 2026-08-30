@@ -38,21 +38,49 @@ function filterTree(nodes: ArmoryReputationNode[], query: string): ArmoryReputat
   return result;
 }
 
-function FactionRow({ node, accent }: { node: ArmoryReputationNode; accent: "guild" | "default" }) {
+// A reputation's standing text maps to one tier of a consistent color scale
+// (matching WoW's own standing meaning) so the same standing always reads
+// the same color everywhere, instead of one color per expansion/category.
+type StandingTier = "neutral" | "friendly" | "honored" | "revered" | "exalted" | "renown" | "other";
+
+function standingTier(standing: string | undefined): StandingTier {
+  if (!standing) return "other";
+  if (/^renown/i.test(standing)) return "renown";
+  if (standing === "Exalted") return "exalted";
+  if (standing === "Revered") return "revered";
+  if (standing === "Honored") return "honored";
+  if (standing === "Friendly") return "friendly";
+  if (standing === "Neutral") return "neutral";
+  return "other";
+}
+
+function countLeaves(nodes: ArmoryReputationNode[]): number {
+  let count = 0;
+  for (const node of nodes) {
+    if (isLeaf(node)) count += 1;
+    else count += countLeaves(node.reputations ?? []);
+  }
+  return count;
+}
+
+function FactionRow({ node }: { node: ArmoryReputationNode }) {
   const value = node.value ?? 0;
   const max = node.maxValue ?? 0;
   const percent = max > 0 ? Math.min(100, (value / max) * 100) : 0;
+  const tier = standingTier(node.standing);
 
   return (
     <div className={styles.row}>
-      <span className={styles.rowLabel}>{node.name}</span>
-      <div className={styles.barTrack} data-accent={accent}>
+      <span className={styles.rowLabel} title={node.name}>
+        {node.name}
+      </span>
+      <div className={styles.barTrack} data-tier={tier}>
         <div className={styles.barFill} style={{ width: `${percent}%` }} />
-        <span className={styles.barValue}>
-          {value.toLocaleString()} / {max.toLocaleString()}
-        </span>
       </div>
-      <span className={styles.rowStanding} data-accent={accent}>
+      <span className={styles.rowValue}>
+        {value.toLocaleString()} / {max.toLocaleString()}
+      </span>
+      <span className={styles.rowStanding} data-tier={tier}>
         {node.standing}
       </span>
     </div>
@@ -61,19 +89,16 @@ function FactionRow({ node, accent }: { node: ArmoryReputationNode; accent: "gui
 
 function ReputationGroup({ node }: { node: ArmoryReputationNode }) {
   const children = node.reputations ?? [];
-  const accent = node.id === "guild" ? "guild" : "default";
+  const leafCount = countLeaves(children);
 
   return (
     <section className={styles.group}>
-      <h3 className={styles.groupTitle}>{node.name}</h3>
+      <div className={styles.groupHeader}>
+        <h3 className={styles.groupTitle}>{node.name}</h3>
+        <span className={styles.groupCount}>{leafCount}</span>
+      </div>
       <div className={styles.groupBody}>
-        {children.map((child) =>
-          isLeaf(child) ? (
-            <FactionRow key={child.id} node={child} accent={accent} />
-          ) : (
-            <ReputationGroup key={child.id} node={child} />
-          ),
-        )}
+        {children.map((child) => (isLeaf(child) ? <FactionRow key={child.id} node={child} /> : <ReputationGroup key={child.id} node={child} />))}
       </div>
     </section>
   );
@@ -85,14 +110,20 @@ function ReputationContent({ reputation }: { reputation: ArmoryReputationRespons
 
   return (
     <div className={styles.wrap}>
-      <div className={styles.controls}>
-        <input
-          type="search"
-          placeholder="Reputation, category, or standing"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          className={styles.search}
-        />
+      <div className={styles.header}>
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>Reputation</h2>
+          <p className={styles.sectionSubtitle}>Standing with factions across every expansion</p>
+        </div>
+        <div className={styles.searchWrap}>
+          <input
+            type="search"
+            placeholder="Reputation, category, or standing"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            className={styles.search}
+          />
+        </div>
       </div>
 
       {groups.length === 0 ? (

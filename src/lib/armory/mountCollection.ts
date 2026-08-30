@@ -219,3 +219,50 @@ export function matchesFilters(mount: EnrichedMount, filters: MountFilterState, 
   if (filters.farmListOnly && !farmListIds.has(mount.id)) return false;
   return true;
 }
+
+export interface PaginatedMounts<T> {
+  items: T[];
+  page: number;
+  pageCount: number;
+  totalCount: number;
+  /** 1-based index of the first item on this page; 0 when totalCount is 0. */
+  startIndex: number;
+  /** 1-based index of the last item on this page. */
+  endIndex: number;
+}
+
+// Pagination always runs last, over the already searched/filtered/sorted
+// list — never the other way around, so search and filters always see the
+// full dataset. An out-of-range page (e.g. the current page no longer
+// exists after a filter shrinks the result set) safely clamps back into
+// range instead of showing an empty page.
+export function paginateMounts<T>(items: T[], page: number, pageSize: number): PaginatedMounts<T> {
+  const totalCount = items.length;
+  const pageCount = Math.max(1, Math.ceil(totalCount / pageSize));
+  const safePage = Math.min(Math.max(1, page), pageCount);
+  const start = (safePage - 1) * pageSize;
+  const pageItems = items.slice(start, start + pageSize);
+
+  return {
+    items: pageItems,
+    page: safePage,
+    pageCount,
+    totalCount,
+    startIndex: totalCount === 0 ? 0 : start + 1,
+    endIndex: start + pageItems.length,
+  };
+}
+
+export type FarmListEligibility = "addable" | "collected" | "unobtainable" | "wrong-faction";
+
+// Whether a mount may be added to the Farm List, and if not, why — a
+// collected mount doesn't need farming, an unobtainable mount can never be
+// farmed, and a wrong-faction mount can't be collected by this character at
+// all. Collected is checked first so a collected-and-unobtainable "legacy"
+// mount reads as "already collected", not as "unobtainable".
+export function getFarmListEligibility(mount: EnrichedMount, characterFaction: CharacterFactionSlug): FarmListEligibility {
+  if (mount.collected) return "collected";
+  if (!isFactionEligible(mount.factionRestriction, characterFaction)) return "wrong-faction";
+  if (mount.unobtainable) return "unobtainable";
+  return "addable";
+}

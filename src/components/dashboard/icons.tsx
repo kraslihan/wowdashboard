@@ -358,6 +358,31 @@ export function ImageOffIcon({ className }: IconProps) {
   );
 }
 
+// A small shield crest used to mark faction restriction/identity — the same
+// shield shape everywhere, with a different inner glyph per faction, so the
+// meaning is legible from shape alone and not just from color.
+export function FactionEmblem({ faction, className }: IconProps & { faction: "alliance" | "horde" }) {
+  return (
+    <svg viewBox="0 0 24 24" width="14" height="14" className={className} aria-hidden="true">
+      <path
+        d="M12 2 4 5v6c0 5 3.4 8.6 8 9 4.6-.4 8-4 8-9V5l-8-3Zm0 2.2 6 2.25V11c0 4-2.6 6.9-6 7.3C8.6 17.9 6 15 6 11V6.45L12 4.2Z"
+        fill="currentColor"
+      />
+      {faction === "horde" ? (
+        <path
+          d="M8.5 9.5c1 2 1 5.5 0 7.5M15.5 9.5c-1 2-1 5.5 0 7.5"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          fill="none"
+        />
+      ) : (
+        <path d="M12 8v9M8.5 12.5h7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      )}
+    </svg>
+  );
+}
+
 export function NoEntryIcon({ className }: IconProps) {
   return (
     <svg

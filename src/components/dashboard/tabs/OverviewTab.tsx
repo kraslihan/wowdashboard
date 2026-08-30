@@ -133,16 +133,17 @@ function EmptySlotRow({ slotKey }: { slotKey: ArmoryGearSlotKey }) {
       <div className={styles.itemIconWrapEmpty} />
       <div className={styles.itemText}>
         <span className={styles.itemNameEmpty}>{slotName}</span>
-      </div>
-      <div className={styles.tooltip}>
-        <div className={styles.tooltipEmptyLine}>{slotName} (empty slot)</div>
+        <span className={styles.itemMetaEmpty}>Not equipped</span>
       </div>
     </div>
   );
 }
 
-function GearRow({ item }: { item: GearItemSummary }) {
+function GearRow({ item, slotKey }: { item: GearItemSummary; slotKey: ArmoryGearSlotKey }) {
   const style = { "--q": qualityColorVar(item.qualityType) } as CSSProperties;
+  const slotLine = [SLOT_DISPLAY_NAMES[slotKey], item.itemLevel ? `Item Level ${item.itemLevel}` : null]
+    .filter(Boolean)
+    .join(" • ");
 
   return (
     <div className={styles.itemRow} style={style}>
@@ -154,14 +155,19 @@ function GearRow({ item }: { item: GearItemSummary }) {
       </div>
       <div className={styles.itemText}>
         <span className={styles.itemName}>{item.name}</span>
-        <span className={styles.itemMeta}>
-          {item.itemLevel ?? ""}
+        <span className={styles.itemSlotLine}>
+          {slotLine}
           {item.socketIconUrls.map((url) => (
             // eslint-disable-next-line @next/next/no-img-element -- external Blizzard-hosted image
             <img key={url} src={proxiedImageUrl(url)} alt="" className={styles.socketIcon} />
           ))}
-          {item.enchantText ? <span className={styles.itemEnchant}>{item.enchantText}</span> : null}
         </span>
+        {item.enchantText ? (
+          <span className={styles.itemEnchant}>
+            <span className={styles.enchantDot} aria-hidden="true" />
+            {item.enchantText}
+          </span>
+        ) : null}
       </div>
 
       <div className={styles.tooltip}>
@@ -176,88 +182,86 @@ function GearColumn({ slots, gear }: { slots: ArmoryGearSlotKey[]; gear: Charact
     <div className={styles.itemsColumn}>
       {slots.map((slot) => {
         const item = gear[slot];
-        return item ? <GearRow key={slot} item={item} /> : <EmptySlotRow key={slot} slotKey={slot} />;
+        return item ? <GearRow key={slot} item={item} slotKey={slot} /> : <EmptySlotRow key={slot} slotKey={slot} />;
       })}
     </div>
   );
 }
 
-function WeaponIconBox({ item, slotKey }: { item: GearItemSummary | undefined; slotKey: ArmoryGearSlotKey }) {
-  if (!item) {
-    return (
-      <div className={styles.weaponIconWrap}>
-        <div className={styles.weaponIconEmpty} />
-        <div className={styles.tooltip}>
-          <div className={styles.tooltipEmptyLine}>{SLOT_DISPLAY_NAMES[slotKey]} (empty slot)</div>
-        </div>
-      </div>
-    );
-  }
-
-  const style = { "--q": qualityColorVar(item.qualityType) } as CSSProperties;
-
-  return (
-    <div className={styles.weaponIconWrap} style={style}>
-      {item.iconUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element -- external Blizzard-hosted image
-        <img src={proxiedImageUrl(item.iconUrl)} alt="" className={styles.weaponIcon} />
-      ) : null}
-      <div className={styles.tooltip}>
-        <ItemTooltipContent item={item} />
-      </div>
-    </div>
-  );
+// A two-handed main-hand weapon occupies the off-hand slot too, so an empty
+// off-hand next to one isn't a missing item — it's expected and should read
+// that way rather than as an identical "not equipped" slot.
+function isTwoHanded(weapon: GearItemSummary | undefined): boolean {
+  return weapon?.slotName === "Two-Hand";
 }
 
 function WeaponSection({ gear }: { gear: CharacterSummary["gear"] }) {
   const weapon = gear.weapon;
   const offHand = gear.offHand;
-  const style = weapon ? ({ "--q": qualityColorVar(weapon.qualityType) } as CSSProperties) : undefined;
+  const twoHanded = isTwoHanded(weapon);
 
   return (
     <div className={styles.weaponSection}>
-      <div className={styles.weaponIcons}>
-        {/* Name, enchant, item level, and the main-hand icon share one hover
-          area so hovering the text reveals the same tooltip as the icon. */}
-        <div className={styles.weaponPrimary} style={style}>
-          <div className={styles.weaponText}>
-            {weapon ? (
-              <>
-                <span className={styles.weaponName}>{weapon.name}</span>
-                {weapon.enchantText ? <span className={styles.weaponEnchant}>{weapon.enchantText}</span> : null}
-              </>
-            ) : (
-              <span className={styles.itemNameEmpty}>{SLOT_DISPLAY_NAMES.weapon}</span>
-            )}
+      <h3 className={styles.subsectionTitle}>Weapons</h3>
+      <div className={styles.itemsColumn}>
+        {weapon ? (
+          <GearRow item={weapon} slotKey="weapon" />
+        ) : (
+          <EmptySlotRow slotKey="weapon" />
+        )}
+        {offHand ? (
+          <GearRow item={offHand} slotKey="offHand" />
+        ) : twoHanded ? (
+          <div className={styles.itemRow}>
+            <div className={styles.itemIconWrapEmpty} />
+            <div className={styles.itemText}>
+              <span className={styles.itemNameEmpty}>{SLOT_DISPLAY_NAMES.offHand}</span>
+              <span className={styles.itemMetaEmpty}>Two-handed weapon equipped</span>
+            </div>
           </div>
-          {weapon?.itemLevel ? <span className={styles.weaponLevel}>{weapon.itemLevel}</span> : null}
-          <div className={styles.weaponIconWrap}>
-            {weapon?.iconUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- external Blizzard-hosted image
-              <img src={proxiedImageUrl(weapon.iconUrl)} alt="" className={styles.weaponIcon} />
-            ) : (
-              <div className={styles.weaponIconEmpty} />
-            )}
-          </div>
-          <div className={styles.tooltip}>
-            {weapon ? (
-              <ItemTooltipContent item={weapon} />
-            ) : (
-              <div className={styles.tooltipEmptyLine}>{SLOT_DISPLAY_NAMES.weapon} (empty slot)</div>
-            )}
-          </div>
-        </div>
-
-        <WeaponIconBox item={offHand} slotKey="offHand" />
+        ) : (
+          <EmptySlotRow slotKey="offHand" />
+        )}
       </div>
     </div>
   );
 }
 
+const STAT_GROUPS: { title: string; slugs: string[] }[] = [
+  { title: "Resources", slugs: ["health", "mana"] },
+  { title: "Primary Attributes", slugs: ["intellect", "stamina"] },
+  { title: "Secondary Stats", slugs: ["critical-strike", "haste", "mastery", "versatility"] },
+];
+
+function StatTile({ stat }: { stat: CharacterSummary["overviewStats"][number] }) {
+  const Icon = STAT_ICONS[stat.slug];
+  const colors = STAT_COLORS[stat.slug];
+  const style = colors
+    ? ({
+        "--stat-bg": colors.bg,
+        "--stat-border": colors.border,
+        "--stat-color": colors.icon,
+      } as CSSProperties)
+    : undefined;
+  return (
+    <div className={styles.statTile} style={style}>
+      {Icon ? <Icon className={styles.statIcon} /> : null}
+      <div className={styles.statValue}>{stat.displayValue}</div>
+      <div className={styles.statLabel}>{stat.label}</div>
+    </div>
+  );
+}
+
 export function OverviewTab({ character }: OverviewTabProps) {
+  const statsBySlug = new Map(character.overviewStats.map((stat) => [stat.slug, stat]));
+
   return (
     <div className={styles.grid}>
       <div className={styles.left}>
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>Equipment</h2>
+          <p className={styles.sectionSubtitle}>Equipped items and enhancements</p>
+        </div>
         <div className={styles.items}>
           <GearColumn slots={LEFT_SLOTS} gear={character.gear} />
           <GearColumn slots={RIGHT_SLOTS} gear={character.gear} />
@@ -266,26 +270,24 @@ export function OverviewTab({ character }: OverviewTabProps) {
       </div>
 
       <div className={styles.right}>
-        <div className={styles.statsGrid}>
-          {character.overviewStats.map((stat) => {
-            const Icon = STAT_ICONS[stat.slug];
-            const colors = STAT_COLORS[stat.slug];
-            const style = colors
-              ? ({
-                  "--stat-bg": colors.bg,
-                  "--stat-border": colors.border,
-                  "--stat-color": colors.icon,
-                } as CSSProperties)
-              : undefined;
-            return (
-              <div key={stat.slug} className={styles.statTile} style={style}>
-                {Icon ? <Icon className={styles.statIcon} /> : null}
-                <div className={styles.statValue}>{stat.displayValue}</div>
-                <div className={styles.statLabel}>{stat.label}</div>
-              </div>
-            );
-          })}
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>Character Stats</h2>
+          <p className={styles.sectionSubtitle}>Current attributes and combat ratings</p>
         </div>
+        {STAT_GROUPS.map((group) => {
+          const stats = group.slugs.map((slug) => statsBySlug.get(slug)).filter((stat): stat is NonNullable<typeof stat> => Boolean(stat));
+          if (stats.length === 0) return null;
+          return (
+            <div key={group.title} className={styles.statGroup}>
+              <h3 className={styles.subsectionTitle}>{group.title}</h3>
+              <div className={styles.statsGrid}>
+                {stats.map((stat) => (
+                  <StatTile key={stat.slug} stat={stat} />
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

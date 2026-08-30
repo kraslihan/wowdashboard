@@ -47,13 +47,7 @@ function bestShuffleSpec(specs: ArmoryShuffleSpec[]): ArmoryShuffleSpec | null {
   return specs.reduce<ArmoryShuffleSpec | null>((best, spec) => (!best || spec.rating > best.rating ? spec : best), null);
 }
 
-function buildListRows(pvp: ArmoryPvp): ListRow[] {
-  const twoV2 = pvp.ratings["2v2"];
-  const threeV3 = pvp.ratings["3v3"];
-  const battlegrounds = pvp.ratings.battlegrounds;
-  const blitz = pvp.ratings.blitz;
-  const shuffle = bestShuffleSpec(pvp.ratings.shuffle?.specs ?? []);
-
+function buildCareerRows(pvp: ArmoryPvp): ListRow[] {
   return [
     {
       key: "honor",
@@ -69,6 +63,17 @@ function buildListRows(pvp: ArmoryPvp): ListRow[] {
       ratingText: String(pvp.honorableKills?.value ?? 0),
       iconUrl: null,
     },
+  ];
+}
+
+function buildRatingRows(pvp: ArmoryPvp): ListRow[] {
+  const twoV2 = pvp.ratings["2v2"];
+  const threeV3 = pvp.ratings["3v3"];
+  const battlegrounds = pvp.ratings.battlegrounds;
+  const blitz = pvp.ratings.blitz;
+  const shuffle = bestShuffleSpec(pvp.ratings.shuffle?.specs ?? []);
+
+  return [
     { key: "2v2", name: "2v2", category: "Arena", ratingText: ratingText(twoV2), iconUrl: twoV2?.tier.icon?.url ?? null },
     { key: "3v3", name: "3v3", category: "Arena", ratingText: ratingText(threeV3), iconUrl: threeV3?.tier.icon?.url ?? null },
     {
@@ -137,7 +142,7 @@ function buildHistoryRows(pvp: ArmoryPvp): HistoryRow[] {
 }
 
 function winPercentText(games: number, wins: number): string {
-  if (games <= 0) return "-";
+  if (games <= 0) return "—";
   return `${Math.round((wins / games) * 100)}%`;
 }
 
@@ -201,7 +206,10 @@ function HistoryTable({ rows }: { rows: HistoryRow[] }) {
           data-alt={index % 2 === 1}
           data-highlight={row.highlight === true}
         >
-          <span className={styles.historyLabel}>{row.label}</span>
+          <span className={styles.historyLabel}>
+            <span className={styles.historyLabelText}>{row.label}</span>
+            {row.highlight ? <span className={styles.currentSpecBadge}>Current Spec</span> : null}
+          </span>
           <span className={styles.historyValue}>{row.games}</span>
           <span className={winsClass(row.wins)}>{row.wins}</span>
           <span className={winPercentClass(row.games, row.wins)}>{winPercentText(row.games, row.wins)}</span>
@@ -212,7 +220,8 @@ function HistoryTable({ rows }: { rows: HistoryRow[] }) {
 }
 
 function PvpContent({ pvp }: { pvp: ArmoryPvp }) {
-  const listRows = buildListRows(pvp);
+  const careerRows = buildCareerRows(pvp);
+  const ratingRows = buildRatingRows(pvp);
   const historyRows = buildHistoryRows(pvp);
 
   return (
@@ -220,7 +229,12 @@ function PvpContent({ pvp }: { pvp: ArmoryPvp }) {
       <h2 className={styles.panelTitle}>Player vs Player</h2>
       <div className={styles.layout}>
         <div className={styles.listWrap}>
-          {listRows.map((row) => (
+          <h3 className={styles.listGroupTitle}>Career</h3>
+          {careerRows.map((row) => (
+            <ListItemRow key={row.key} row={row} />
+          ))}
+          <h3 className={styles.listGroupTitle}>Current Ratings</h3>
+          {ratingRows.map((row) => (
             <ListItemRow key={row.key} row={row} />
           ))}
         </div>
