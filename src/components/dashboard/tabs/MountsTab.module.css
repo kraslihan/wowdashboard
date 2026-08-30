@@ -430,7 +430,6 @@
 }
 
 .card[data-status="available"] .image,
-.card[data-status="wrong-faction"] .image,
 .card[data-status="unobtainable"] .image {
   opacity: 0.6;
 }
@@ -534,11 +533,6 @@
 .badgeUnobtainable {
   border-color: var(--text-muted);
   color: var(--text-muted);
-}
-
-.badgeWrongFaction {
-  border-color: var(--status-warning);
-  color: var(--status-warning);
 }
 
 .badgeLegacy {

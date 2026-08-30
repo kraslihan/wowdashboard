@@ -5,7 +5,6 @@ import { armoryApiUrl, type CharacterRef } from "@/lib/character";
 import { proxiedImageUrl } from "@/lib/imageProxy";
 import { useArmoryResource } from "@/lib/useArmoryResource";
 import { useFarmListMountIds } from "@/lib/useFarmListMountIds";
-import type { CharacterSummary } from "@/lib/armory/characterSummary";
 import type { ArmoryMountsResponse } from "@/lib/armory/types";
 import { enrichMounts, gridImageUrl, detailImageUrl, type EnrichedMount, type MountFactionRestriction } from "@/lib/armory/mountReference";
 import {
@@ -29,7 +28,6 @@ import {
   SORT_DEFS,
   STATUS_LABELS,
   TAB_DEFS,
-  type CharacterFactionSlug,
   type CollectionTab,
   type FarmListEligibility,
   type MountDisplayStatus,
@@ -38,7 +36,7 @@ import {
 } from "@/lib/armory/mountCollection";
 import { AsyncBoundary } from "../AsyncBoundary";
 import { Drawer } from "../Drawer";
-import { CheckIcon, FactionEmblem, FilterIcon, ImageOffIcon, LockIcon, NoEntryIcon, SearchIcon, SortIcon, StarIcon } from "../icons";
+import { CheckIcon, FactionEmblem, FilterIcon, ImageOffIcon, LockIcon, SearchIcon, SortIcon, StarIcon } from "../icons";
 import styles from "./MountsTab.module.css";
 
 interface MountsTabProps {
@@ -98,14 +96,6 @@ function StatusBadge({ status, compact }: { status: MountDisplayStatus; compact?
       <span className={`${styles.badge} ${styles.badgeUnobtainable}`}>
         <LockIcon />
         {!compact && STATUS_LABELS.unobtainable}
-      </span>
-    );
-  }
-  if (status === "wrong-faction") {
-    return (
-      <span className={`${styles.badge} ${styles.badgeWrongFaction}`}>
-        <NoEntryIcon />
-        {!compact && STATUS_LABELS["wrong-faction"]}
       </span>
     );
   }
@@ -183,7 +173,7 @@ function MountCard({
         />
       </div>
       <span className={styles.name}>{mount.name}</span>
-      {status === "wrong-faction" && mount.factionRestriction ? (
+      {status === "available" && mount.factionRestriction ? (
         <span className={styles.cardFactionCaption}>
           <FactionEmblem faction={mount.factionRestriction} />
           {factionLabel(mount.factionRestriction)} Only
@@ -201,36 +191,30 @@ interface ActiveChip {
   onRemove: () => void;
 }
 
-function MountsContent({
-  mountsResponse,
-  characterFaction,
-}: {
-  mountsResponse: ArmoryMountsResponse;
-  characterFaction: CharacterFactionSlug;
-}) {
+function MountsContent({ mountsResponse }: { mountsResponse: ArmoryMountsResponse }) {
   const enriched = useMemo(() => enrichMounts(mountsResponse.mounts), [mountsResponse.mounts]);
   const statusById = useMemo(() => {
     const map = new Map<number, MountDisplayStatus>();
     for (const mount of enriched) {
-      map.set(mount.id, getMountDisplayStatus(mount, characterFaction));
+      map.set(mount.id, getMountDisplayStatus(mount));
     }
     return map;
-  }, [enriched, characterFaction]);
+  }, [enriched]);
   const statusOf = useCallback(
     (mount: EnrichedMount): MountDisplayStatus => statusById.get(mount.id) ?? "available",
     [statusById],
   );
 
-  const stats = useMemo(() => calculateMountStats(enriched, characterFaction), [enriched, characterFaction]);
+  const stats = useMemo(() => calculateMountStats(enriched), [enriched]);
 
   const { farmListIds, toggleFarmListMount } = useFarmListMountIds();
   const farmEligibilityById = useMemo(() => {
     const map = new Map<number, FarmListEligibility>();
     for (const mount of enriched) {
-      map.set(mount.id, getFarmListEligibility(mount, characterFaction));
+      map.set(mount.id, getFarmListEligibility(mount));
     }
     return map;
-  }, [enriched, characterFaction]);
+  }, [enriched]);
   const farmEligibilityOf = useCallback(
     (mount: EnrichedMount): FarmListEligibility => farmEligibilityById.get(mount.id) ?? "addable",
     [farmEligibilityById],
@@ -309,17 +293,6 @@ function MountsContent({
   if (pageResult.page !== page) {
     setPage(pageResult.page);
   }
-
-  // Wrong-faction mounts never carry status "available"/"collected"/
-  // "unobtainable" (only "wrong-faction", which only the All tab shows), so
-  // a Faction filter selecting only the *other* faction can never match
-  // anything outside All — not a bug, but worth explaining instead of just
-  // showing a generic "no matches" message.
-  const otherFactionOnlyFilterOnNonAllTab = useMemo(() => {
-    if (tab === "all" || filters.factions.size === 0 || filters.factions.has(characterFaction)) return null;
-    const [first] = filters.factions;
-    return first ?? null;
-  }, [tab, filters.factions, characterFaction]);
 
   const activeChips = useMemo<ActiveChip[]>(() => {
     const chips: ActiveChip[] = [];
@@ -584,15 +557,13 @@ function MountsContent({
         <p className={styles.empty}>
           {query
             ? "No mounts match your search."
-            : otherFactionOnlyFilterOnNonAllTab
-              ? `${factionLabel(otherFactionOnlyFilterOnNonAllTab)} mounts can't be collected by your ${factionLabel(characterFaction)} character, so they only show up under the All tab.`
-              : !isFilterStateEmpty(filters)
-                ? "No mounts match your filters."
-                : tab === "collected"
-                  ? "You haven't collected any mounts in this view yet."
-                  : tab === "unobtainable"
-                    ? "No unobtainable mounts here — nothing to show."
-                    : "No mounts match this view."}
+            : !isFilterStateEmpty(filters)
+              ? "No mounts match your filters."
+              : tab === "collected"
+                ? "You haven't collected any mounts in this view yet."
+                : tab === "unobtainable"
+                  ? "No unobtainable mounts here — nothing to show."
+                  : "No mounts match this view."}
         </p>
       ) : (
         <>
@@ -746,14 +717,9 @@ function MountsContent({
             </>
           ) : selectedFarmEligibility === "collected" ? (
             <p className={styles.detailFarmListStatus}>You already have this mount, so there&apos;s nothing left to farm.</p>
-          ) : selectedFarmEligibility === "unobtainable" ? (
-            <p className={styles.detailFarmListStatus}>
-              This mount can no longer be obtained, so it can&apos;t be added to your Farm List.
-            </p>
           ) : (
             <p className={styles.detailFarmListStatus}>
-              Not available for your faction — {factionLabel(selectedMount.factionRestriction)} Only — so it can&apos;t be added
-              to your Farm List.
+              This mount can no longer be obtained, so it can&apos;t be added to your Farm List.
             </p>
           )}
         </Drawer>
@@ -763,18 +729,11 @@ function MountsContent({
 }
 
 export function MountsTab({ characterRef }: MountsTabProps) {
-  const mounts = useArmoryResource<ArmoryMountsResponse>(armoryApiUrl("mounts", characterRef));
-  const character = useArmoryResource<CharacterSummary>(armoryApiUrl("character", characterRef));
-
-  const loading = mounts.loading || character.loading;
-  const error = mounts.error ?? character.error;
-  const data = mounts.data && character.data ? { mounts: mounts.data, character: character.data } : null;
+  const { data, loading, error } = useArmoryResource<ArmoryMountsResponse>(armoryApiUrl("mounts", characterRef));
 
   return (
     <AsyncBoundary loading={loading} error={error} data={data}>
-      {({ mounts, character }) => (
-        <MountsContent mountsResponse={mounts} characterFaction={character.faction.slug as CharacterFactionSlug} />
-      )}
+      {(mounts) => <MountsContent mountsResponse={mounts} />}
     </AsyncBoundary>
   );
 }

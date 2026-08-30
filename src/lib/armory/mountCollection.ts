@@ -14,16 +14,22 @@ export function isFactionEligible(mountFaction: MountFactionRestriction | null, 
   return mountFaction === null || mountFaction === characterFaction;
 }
 
-export type MountDisplayStatus = "collected" | "available" | "unobtainable" | "wrong-faction";
+export type MountDisplayStatus = "collected" | "available" | "unobtainable";
 
 // A single prioritized status per mount: collected always wins (a character
 // that already owns a mount sees it as collected even if it's also flagged
-// unobtainable or faction-restricted). Callers that need to surface the
-// unobtainable overlap on a collected mount should check `mount.unobtainable`
-// separately (see isLegacyCollected below) rather than folding it into this.
-export function getMountDisplayStatus(mount: EnrichedMount, characterFaction: CharacterFactionSlug): MountDisplayStatus {
+// unobtainable). Callers that need to surface the unobtainable overlap on a
+// collected mount should check `mount.unobtainable` separately (see
+// isLegacyCollected below) rather than folding it into this.
+//
+// Faction restriction is deliberately NOT part of this status: accounts
+// commonly have characters on both factions, and a mount restricted to the
+// other faction is still very much something the player wants to see and
+// track here (e.g. to farm it on that other character) — it's informational
+// (see the faction badge/caption), not a reason to hide or reclassify a
+// mount as unobtainable or exclude it from "available".
+export function getMountDisplayStatus(mount: EnrichedMount): MountDisplayStatus {
   if (mount.collected) return "collected";
-  if (!isFactionEligible(mount.factionRestriction, characterFaction)) return "wrong-faction";
   if (mount.unobtainable) return "unobtainable";
   return "available";
 }
@@ -41,30 +47,23 @@ export interface MountCollectionStats {
   collectedMounts: number;
   unobtainableMounts: number;
   availableToCollect: number;
-  wrongFactionMounts: number;
   completionRate: number;
 }
 
 // Every mount lands in exactly one bucket: collectedMounts first (it always
-// wins), then — for the rest — wrongFactionMounts, unobtainableMounts, or
-// availableToCollect. completionRate is collected divided by the mounts this
-// character could ever collect (collected + still available), so mounts
-// that are wrong-faction or unobtainable-and-never-collected never enter the
-// denominator. No subtraction-based math (e.g. total - unobtainable -
-// collected) is used anywhere here.
-export function calculateMountStats(mounts: EnrichedMount[], characterFaction: CharacterFactionSlug): MountCollectionStats {
+// wins), then — for the rest — unobtainableMounts or availableToCollect.
+// completionRate is collected divided by the mounts that could ever be
+// collected (collected + still available), so unobtainable-and-never-
+// collected mounts never enter the denominator. No subtraction-based math
+// (e.g. total - unobtainable - collected) is used anywhere here.
+export function calculateMountStats(mounts: EnrichedMount[]): MountCollectionStats {
   let collectedMounts = 0;
   let unobtainableMounts = 0;
   let availableToCollect = 0;
-  let wrongFactionMounts = 0;
 
   for (const mount of mounts) {
     if (mount.collected) {
       collectedMounts += 1;
-      continue;
-    }
-    if (!isFactionEligible(mount.factionRestriction, characterFaction)) {
-      wrongFactionMounts += 1;
     } else if (mount.unobtainable) {
       unobtainableMounts += 1;
     } else {
@@ -79,7 +78,6 @@ export function calculateMountStats(mounts: EnrichedMount[], characterFaction: C
     collectedMounts,
     unobtainableMounts,
     availableToCollect,
-    wrongFactionMounts,
     completionRate: obtainableTotal > 0 ? collectedMounts / obtainableTotal : 0,
   };
 }
@@ -116,7 +114,6 @@ export const STATUS_LABELS: Record<MountDisplayStatus, string> = {
   collected: "Collected",
   available: "To Collect",
   unobtainable: "Unobtainable",
-  "wrong-faction": "Wrong Faction",
 };
 
 export type CollectionTab = "all" | "collected" | "to-collect" | "unobtainable";
@@ -161,7 +158,6 @@ const STATUS_SORT_WEIGHT: Record<MountDisplayStatus, number> = {
   collected: 0,
   available: 1,
   unobtainable: 2,
-  "wrong-faction": 3,
 };
 
 export function sortMounts(
@@ -253,16 +249,18 @@ export function paginateMounts<T>(items: T[], page: number, pageSize: number): P
   };
 }
 
-export type FarmListEligibility = "addable" | "collected" | "unobtainable" | "wrong-faction";
+export type FarmListEligibility = "addable" | "collected" | "unobtainable";
 
 // Whether a mount may be added to the Farm List, and if not, why — a
-// collected mount doesn't need farming, an unobtainable mount can never be
-// farmed, and a wrong-faction mount can't be collected by this character at
-// all. Collected is checked first so a collected-and-unobtainable "legacy"
-// mount reads as "already collected", not as "unobtainable".
-export function getFarmListEligibility(mount: EnrichedMount, characterFaction: CharacterFactionSlug): FarmListEligibility {
+// collected mount doesn't need farming, and an unobtainable mount can never
+// be farmed by anyone. Faction restriction does not block this: an account
+// commonly has characters on both factions, so a mount restricted to the
+// other faction can still be a legitimate Farm List entry (to farm on that
+// other character). Collected is checked first so a collected-and-
+// unobtainable "legacy" mount reads as "already collected", not
+// "unobtainable".
+export function getFarmListEligibility(mount: EnrichedMount): FarmListEligibility {
   if (mount.collected) return "collected";
-  if (!isFactionEligible(mount.factionRestriction, characterFaction)) return "wrong-faction";
   if (mount.unobtainable) return "unobtainable";
   return "addable";
 }
