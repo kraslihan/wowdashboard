@@ -2,15 +2,18 @@
 
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
+import { characterDashboardPath, type CharacterRef } from "@/lib/character";
 import type { CharacterSummary } from "@/lib/armory/characterSummary";
 import type { DashboardTabId } from "@/lib/dashboardTabs";
 import { proxiedImageUrl } from "@/lib/imageProxy";
+import { CharacterSwitcher } from "./CharacterSwitcher";
 import { CrossedSwordsIcon, FactionEmblem, ShieldIcon } from "./icons";
 import styles from "./CharacterHeader.module.css";
 
 interface CharacterHeaderProps {
   character: CharacterSummary;
   activeTab: DashboardTabId;
+  activeCharacterRef: CharacterRef;
 }
 
 const FACTION_LABELS: Record<string, string> = {
@@ -58,7 +61,7 @@ function StatAction({
   );
 }
 
-export function CharacterHeader({ character, activeTab }: CharacterHeaderProps) {
+export function CharacterHeader({ character, activeTab, activeCharacterRef }: CharacterHeaderProps) {
   const specClassText = joinNonEmpty([character.spec?.name, character.class.name], " ");
   const metaLine = joinNonEmpty([`Level ${character.level}`, character.race.name, specClassText], " • ");
   const hasRealm = Boolean(character.realm.name);
@@ -78,6 +81,7 @@ export function CharacterHeader({ character, activeTab }: CharacterHeaderProps) 
         <div className={styles.details}>
           <div className={styles.nameRow}>
             <span className={styles.name}>{character.name}</span>
+            <CharacterSwitcher activeCharacterRef={activeCharacterRef} activeTab={activeTab} />
             {factionSlug ? (
               <span
                 className={styles.factionMark}
@@ -108,7 +112,7 @@ export function CharacterHeader({ character, activeTab }: CharacterHeaderProps) 
 
       <div className={styles.quickStats}>
         <StatAction
-          href="/achievements"
+          href={characterDashboardPath(activeCharacterRef, "achievements")}
           active={activeTab === "achievements"}
           ariaLabel="View achievements"
           icon={<ShieldIcon className={styles.statIcon} />}
@@ -116,7 +120,7 @@ export function CharacterHeader({ character, activeTab }: CharacterHeaderProps) 
           label="Achievement Points"
         />
         <StatAction
-          href="/overview"
+          href={characterDashboardPath(activeCharacterRef, "overview")}
           active={activeTab === "overview"}
           ariaLabel="View item level details"
           icon={<CrossedSwordsIcon className={styles.statIcon} />}

@@ -1,15 +1,14 @@
 import { addFarmListEntry, getFarmListMountIds, removeFarmListEntries, removeFarmListEntry } from "@/lib/db/farmListRepository";
-import type { CharacterRef } from "@/lib/character";
+import { characterKeyFor } from "@/lib/character";
 import { isMountUnobtainable } from "./mountReference";
 import type { ArmoryMount, ArmoryMountsResponse, ArmoryMountsResponseWithFarmList } from "./types";
 
-// Farm List rows are keyed by this normalized string rather than a
-// fabricated account/user id — see the comment on farmListEntries in
-// src/lib/db/schema.ts for why. Two characters that happen to share a name
-// on different realms (or the same realm/region entirely) never collide.
-export function characterKeyFor(ref: CharacterRef): string {
-  return `${ref.region}:${ref.realmSlug}:${ref.characterName}`.toLowerCase();
-}
+// Farm List rows are keyed by the shared characterKeyFor() (region:realmSlug:
+// characterName) rather than a fabricated account/user id — see the comment
+// on farmListEntries in src/lib/db/schema.ts for why. Two characters that
+// happen to share a name on different realms never collide. Re-exported here
+// so existing importers of this module don't need to change.
+export { characterKeyFor };
 
 export type FarmListErrorCode = "MOUNT_NOT_FOUND" | "COLLECTED_MOUNT_CANNOT_BE_FARMED" | "UNOBTAINABLE_MOUNT_CANNOT_BE_FARMED";
 
