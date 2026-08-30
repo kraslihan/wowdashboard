@@ -358,27 +358,39 @@ export function ImageOffIcon({ className }: IconProps) {
   );
 }
 
-// A small shield crest used to mark faction restriction/identity — the same
-// shield shape everywhere, with a different inner glyph per faction, so the
-// meaning is legible from shape alone and not just from color.
-export function FactionEmblem({ faction, className }: IconProps & { faction: "alliance" | "horde" }) {
+// A small faction crest — a simplified redraw (not a traced reproduction) of
+// the classic Alliance lion crest / Horde tribal mark, each with its own
+// distinct silhouette so the meaning is legible from shape alone, not just
+// from color. Used everywhere faction is called out so the same mark reads
+// consistently across the header, mount cards, and filters.
+const ALLIANCE_PATH =
+  "M12 2 L14.2 4.3 L17.3 3 L15.6 6.3 L19.2 7.3 L16.6 10.1 L17.6 14.2 L14.3 16.8 L12 22 " +
+  "L9.7 16.8 L6.4 14.2 L7.4 10.1 L4.8 7.3 L8.4 6.3 L6.7 3 L9.8 4.3 Z " +
+  "M9 8.7 a1.05 1.25 0 1 0 0.1 0 Z " +
+  "M14.9 8.7 a1.05 1.25 0 1 0 0.1 0 Z " +
+  "M12 10.3 L13.4 12.9 L12 15.3 L10.6 12.9 Z";
+
+const HORDE_PATH =
+  "M12 1.5 L15.6 6 L13.8 7.8 L18.8 8.8 L15.6 11.6 L18 14.2 L14.6 14.6 L15.7 18 L13 16.2 L12.7 22.5 " +
+  "L11.3 22.5 L11 16.2 L8.3 18 L9.4 14.6 L6 14.2 L8.4 11.6 L5.2 8.8 L10.2 7.8 L8.4 6 Z " +
+  "M9.6 8.6 Q9.6 12.2 12 15 Q14.4 12.2 14.4 8.6 Q14.4 7.4 12 7.4 Q9.6 7.4 9.6 8.6 Z " +
+  "M12 9.7 L13.5 11.4 L12 13.1 L10.5 11.4 Z";
+
+export function FactionEmblem({
+  faction,
+  className,
+  "data-faction": dataFaction,
+}: IconProps & { faction: "alliance" | "horde"; "data-faction"?: string }) {
   return (
-    <svg viewBox="0 0 24 24" width="14" height="14" className={className} aria-hidden="true">
-      <path
-        d="M12 2 4 5v6c0 5 3.4 8.6 8 9 4.6-.4 8-4 8-9V5l-8-3Zm0 2.2 6 2.25V11c0 4-2.6 6.9-6 7.3C8.6 17.9 6 15 6 11V6.45L12 4.2Z"
-        fill="currentColor"
-      />
-      {faction === "horde" ? (
-        <path
-          d="M8.5 9.5c1 2 1 5.5 0 7.5M15.5 9.5c-1 2-1 5.5 0 7.5"
-          stroke="currentColor"
-          strokeWidth="1.6"
-          strokeLinecap="round"
-          fill="none"
-        />
-      ) : (
-        <path d="M12 8v9M8.5 12.5h7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-      )}
+    <svg
+      viewBox="0 0 24 24"
+      width="14"
+      height="14"
+      className={className}
+      data-faction={dataFaction}
+      aria-hidden="true"
+    >
+      <path d={faction === "horde" ? HORDE_PATH : ALLIANCE_PATH} fill="currentColor" fillRule="evenodd" />
     </svg>
   );
 }

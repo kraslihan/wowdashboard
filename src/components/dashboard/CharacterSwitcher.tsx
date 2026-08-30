@@ -48,7 +48,7 @@ function CharacterOption({
       aria-current={isActive ? "true" : undefined}
     >
       {factionSlug ? (
-        <FactionEmblem faction={factionSlug} className={styles.optionFaction} />
+        <FactionEmblem faction={factionSlug} className={styles.optionFaction} data-faction={factionSlug} />
       ) : (
         <span className={styles.optionFactionPlaceholder} aria-hidden="true" />
       )}

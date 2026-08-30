@@ -84,6 +84,14 @@
   color: var(--text-muted);
 }
 
+.optionFaction[data-faction="alliance"] {
+  color: var(--faction-alliance);
+}
+
+.optionFaction[data-faction="horde"] {
+  color: var(--faction-horde);
+}
+
 .optionFactionPlaceholder {
   width: 14px;
   height: 14px;

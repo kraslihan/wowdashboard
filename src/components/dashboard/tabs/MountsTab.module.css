@@ -355,6 +355,18 @@
   color: var(--text-primary);
 }
 
+.dropdownCheckOption[data-faction="alliance"] {
+  color: var(--faction-alliance);
+}
+
+.dropdownCheckOption[data-faction="horde"] {
+  color: var(--faction-horde);
+}
+
+.dropdownFactionIcon {
+  flex-shrink: 0;
+}
+
 .chipRow {
   display: flex;
   flex-wrap: wrap;
@@ -380,6 +392,28 @@
 
 .chip:hover {
   border-color: var(--chrome-accent-gold);
+}
+
+.chip[data-faction="alliance"] {
+  background: rgba(79, 168, 232, 0.12);
+  color: var(--faction-alliance);
+}
+
+.chip[data-faction="alliance"]:hover {
+  border-color: var(--faction-alliance);
+}
+
+.chip[data-faction="horde"] {
+  background: rgba(193, 68, 59, 0.12);
+  color: var(--faction-horde);
+}
+
+.chip[data-faction="horde"]:hover {
+  border-color: var(--faction-horde);
+}
+
+.chipFactionIcon {
+  flex-shrink: 0;
 }
 
 .chipClear {
@@ -493,6 +527,14 @@
   text-transform: uppercase;
   letter-spacing: 0.03em;
   color: var(--text-muted);
+}
+
+.cardFactionCaption[data-faction="alliance"] {
+  color: var(--faction-alliance);
+}
+
+.cardFactionCaption[data-faction="horde"] {
+  color: var(--faction-horde);
 }
 
 .cardStatus {

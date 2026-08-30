@@ -178,7 +178,7 @@ function MountCard({
       </div>
       <span className={styles.name}>{mount.name}</span>
       {status === "available" && mount.factionRestriction ? (
-        <span className={styles.cardFactionCaption}>
+        <span className={styles.cardFactionCaption} data-faction={mount.factionRestriction}>
           <FactionEmblem faction={mount.factionRestriction} />
           {factionLabel(mount.factionRestriction)} Only
         </span>
@@ -192,6 +192,7 @@ function MountCard({
 interface ActiveChip {
   key: string;
   label: string;
+  faction?: MountFactionRestriction;
   onRemove: () => void;
 }
 
@@ -331,6 +332,7 @@ function MountsContent({
       chips.push({
         key: `faction-${faction}`,
         label: factionLabel(faction),
+        faction,
         onRemove: () =>
           setFilters((prev) => {
             const next = new Set(prev.factions);
@@ -499,8 +501,9 @@ function MountsContent({
 
               <span className={styles.dropdownGroupLabel}>Faction</span>
               {FACTION_OPTIONS.map((faction) => (
-                <label key={faction} className={styles.dropdownCheckOption}>
+                <label key={faction} className={styles.dropdownCheckOption} data-faction={faction}>
                   <input type="checkbox" checked={filters.factions.has(faction)} onChange={() => toggleFactionFilter(faction)} />
+                  <FactionEmblem faction={faction} className={styles.dropdownFactionIcon} />
                   {factionLabel(faction)}
                 </label>
               ))}
@@ -558,7 +561,8 @@ function MountsContent({
       {activeChips.length > 0 ? (
         <div className={styles.chipRow}>
           {activeChips.map((chip) => (
-            <button key={chip.key} type="button" className={styles.chip} onClick={chip.onRemove}>
+            <button key={chip.key} type="button" className={styles.chip} data-faction={chip.faction} onClick={chip.onRemove}>
+              {chip.faction ? <FactionEmblem faction={chip.faction} className={styles.chipFactionIcon} /> : null}
               {chip.label}
               <span aria-hidden="true"> ×</span>
             </button>
