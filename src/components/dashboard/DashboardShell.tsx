@@ -53,11 +53,13 @@ export function DashboardShell({ characterRef, activeTab }: DashboardShellProps)
 
   return (
     <div className={styles.shell}>
-      <AsyncBoundary loading={character.loading} error={character.error} data={character.data}>
-        {(data) => <CharacterHeader character={data} />}
-      </AsyncBoundary>
+      <div className={styles.navBlock}>
+        <AsyncBoundary loading={character.loading} error={character.error} data={character.data}>
+          {(data) => <CharacterHeader character={data} activeTab={activeTab} />}
+        </AsyncBoundary>
 
-      <Tabs tabs={TABS} activeId={activeTab} />
+        <Tabs tabs={TABS} activeId={activeTab} />
+      </div>
 
       <div className={styles.panels}>
         {activeTab === "overview" && (

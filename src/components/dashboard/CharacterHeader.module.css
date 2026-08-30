@@ -1,16 +1,26 @@
 .header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 18px;
+  justify-content: space-between;
+  gap: 10px 20px;
   background: var(--surface-1);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 12px 18px;
 }
 
+.identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  flex: 1 1 260px;
+}
+
 .avatar {
-  width: 68px;
-  height: 68px;
+  width: 58px;
+  height: 58px;
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
@@ -18,38 +28,122 @@
   border: 2px solid var(--border);
 }
 
-.info {
+.avatar[data-faction="alliance"] {
+  border-color: var(--faction-alliance);
+}
+
+.avatar[data-faction="horde"] {
+  border-color: var(--faction-horde);
+}
+
+.details {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   min-width: 0;
 }
 
-.topRow {
+.nameRow {
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: 7px;
+  min-width: 0;
 }
 
 .name {
-  font-size: 22px;
+  font-size: 19px;
   font-weight: 700;
   color: var(--chrome-accent-blue);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.divider {
+.factionMark {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.factionMark[data-faction="alliance"] {
+  background: var(--faction-alliance);
+}
+
+.factionMark[data-faction="horde"] {
+  background: var(--faction-horde);
+}
+
+.metaLine {
+  font-size: 13px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.locationLine {
+  font-size: 12px;
   color: var(--text-muted);
-  font-weight: 300;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.stat {
+.locationDot {
+  color: var(--text-muted);
+}
+
+.guildName {
+  color: rgba(227, 166, 62, 0.75);
+}
+
+.quickStats {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.statAction {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.statAction:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--border);
+}
+
+.statAction:focus-visible {
+  outline: 2px solid var(--chrome-accent-gold);
+  outline-offset: 2px;
+}
+
+.statValueRow {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: 15px;
   font-weight: 700;
   color: var(--chrome-accent-gold);
+  white-space: nowrap;
 }
 
 .statIcon {
@@ -57,24 +151,39 @@
   flex-shrink: 0;
 }
 
-.bottomRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-}
-
-.metaText {
-  color: var(--text-muted);
-}
-
-.metaDot {
-  color: var(--text-muted);
+.statLabel {
   font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  white-space: nowrap;
 }
 
-.metaGuild {
-  color: var(--chrome-accent-gold);
-  opacity: 0.85;
+@media (max-width: 720px) {
+  .quickStats {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    padding: 12px 14px;
+  }
+
+  .quickStats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    width: 100%;
+  }
+
+  .statAction {
+    align-items: center;
+    text-align: center;
+  }
+
+  .statValueRow {
+    justify-content: center;
+  }
 }

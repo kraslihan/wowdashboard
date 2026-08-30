@@ -7,6 +7,12 @@
   gap: 20px;
 }
 
+.navBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .panels {
   min-height: 240px;
 }
